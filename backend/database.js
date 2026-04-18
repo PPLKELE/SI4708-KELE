@@ -105,6 +105,26 @@ function initDb() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON DELETE CASCADE,
             FOREIGN KEY (pengawas_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS insentif (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            worker_id INT NOT NULL,
+            tanggal DATE NOT NULL,
+            jumlah_upah DECIMAL(12,2) NOT NULL DEFAULT 0,
+            jenis_insentif VARCHAR(100) NOT NULL,
+            keterangan TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS rewards (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            worker_id INT NOT NULL,
+            nama_penghargaan VARCHAR(255) NOT NULL,
+            tanggal_pemberian DATE NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
         )`
     ];
 
