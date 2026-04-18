@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Leaf } from 'lucide-react';
 
@@ -96,6 +96,13 @@ const Login = () => {
         <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
           <p>Admin: admin@village.com / admin123</p>
           <p>Pengawas: pengawas@village.com / pengawas123</p>
+        </div>
+        
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Belum punya akun? </span>
+          <Link to="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '500' }}>
+            Daftar di sini
+          </Link>
         </div>
       </div>
     </div>
