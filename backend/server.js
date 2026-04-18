@@ -363,6 +363,75 @@ app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
     });
 });
 
+// --- 10. Edukasi ---
+app.get('/api/edukasi', authenticateToken, (req, res) => {
+    db.query('SELECT * FROM edukasi_contents ORDER BY created_at DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/edukasi', authenticateToken, (req, res) => {
+    const { judul, deskripsi, kategori, tipe_konten, url_konten } = req.body;
+    db.query('INSERT INTO edukasi_contents (judul, deskripsi, kategori, tipe_konten, url_konten) VALUES (?, ?, ?, ?, ?)',
+        [judul, deskripsi, kategori, tipe_konten, url_konten], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, ...req.body });
+        });
+});
+
+// --- 11. Inventaris (Stok & Distribusi) ---
+app.get('/api/inventaris', authenticateToken, (req, res) => {
+    db.query('SELECT * FROM inventaris ORDER BY created_at DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/inventaris', authenticateToken, (req, res) => {
+    const { nama_barang, kategori, kuantitas, satuan } = req.body;
+    db.query('INSERT INTO inventaris (nama_barang, kategori, kuantitas, satuan) VALUES (?, ?, ?, ?)',
+        [nama_barang, kategori, kuantitas || 0, satuan], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            const invId = result.insertId;
+            if (kuantitas > 0) {
+                db.query('INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?, ?, ?, ?)',
+                    [invId, kuantitas, 'tambah', 'Stok Awal']);
+            }
+            res.json({ id: invId, ...req.body });
+        });
+});
+
+app.post('/api/inventaris/:id/adjust', authenticateToken, (req, res) => {
+    const invId = req.params.id;
+    const { jumlah, tipe, keterangan } = req.body; // tipe: 'tambah' or 'kurang'
+    const adjJumlah = Number(jumlah);
+    
+    if (!adjJumlah || adjJumlah <= 0 || (tipe !== 'tambah' && tipe !== 'kurang')) {
+        return res.status(400).json({ error: 'Data penyesuaian tidak valid' });
+    }
+
+    // Update stok
+    const operator = tipe === 'tambah' ? '+' : '-';
+    db.query(`UPDATE inventaris SET kuantitas = kuantitas ${operator} ? WHERE id = ?`, [adjJumlah, invId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Catat riwayat
+        db.query('INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?, ?, ?, ?)',
+            [invId, adjJumlah, tipe, keterangan || ''], (errHist) => {
+                if (errHist) console.error('Error logging history:', errHist);
+                res.json({ success: true, message: 'Stok berhasil diperbarui' });
+            });
+    });
+});
+
+app.get('/api/inventaris/:id/history', authenticateToken, (req, res) => {
+    db.query('SELECT * FROM inventaris_history WHERE inventaris_id = ? ORDER BY created_at DESC', [req.params.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
 /* Simple Test API */
 app.get('/ping', (req, res) => res.json({ message: "pong" }));
 

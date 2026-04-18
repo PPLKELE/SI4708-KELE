@@ -125,6 +125,35 @@ function initDb() {
             tanggal_pemberian DATE NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS edukasi_contents (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            judul VARCHAR(255) NOT NULL,
+            deskripsi TEXT NOT NULL,
+            kategori VARCHAR(100) NOT NULL,
+            tipe_konten VARCHAR(50) NOT NULL,
+            url_konten TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS inventaris (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nama_barang VARCHAR(255) NOT NULL,
+            kategori VARCHAR(100) NOT NULL,
+            kuantitas DECIMAL(10,2) DEFAULT 0,
+            satuan VARCHAR(50) NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS inventaris_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            inventaris_id INT NOT NULL,
+            jumlah_perubahan DECIMAL(10,2) NOT NULL,
+            tipe_perubahan ENUM('tambah', 'kurang') NOT NULL,
+            keterangan TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (inventaris_id) REFERENCES inventaris(id) ON DELETE CASCADE
         )`
     ];
 
@@ -160,6 +189,38 @@ function seedDefaults() {
             const pengawasPassword = bcrypt.hashSync('pengawas123', 8);
             db.query("INSERT INTO users (nama, email, password_hash, role) VALUES (?, ?, ?, ?)",
                 ['Pengawas Lapangan', 'pengawas@village.com', pengawasPassword, 'pengawas']);
+        }
+    });
+
+    // Insert default edukasi contents
+    db.query("SELECT COUNT(*) as count FROM edukasi_contents", (err, results) => {
+        if (results && results[0].count === 0) {
+            const defaultContents = [
+                ['Cara Menanam Sayur Organik', 'Panduan dasar menanam sayuran organik di pekarangan rumah untuk kebutuhan sehari-hari.', 'Pertanian', 'Artikel', 'modal:menanam-sayur'],
+                ['Mengelola Sampah Organik Menjadi Kompos', 'Langkah-langkah mudah mengubah sisa makanan dan sampah organik menjadi pupuk kompos yang berguna.', 'Lingkungan', 'Video', 'https://www.youtube.com/watch?v=eBjriH59MLg'],
+                ['Membuat Kerajinan dari Barang Bekas', 'Ide kreatif mendaur ulang barang bekas menjadi kerajinan bernilai jual.', 'Keterampilan', 'Artikel', 'modal:kerajinan']
+            ];
+            const sql = "INSERT INTO edukasi_contents (judul, deskripsi, kategori, tipe_konten, url_konten) VALUES ?";
+            db.query(sql, [defaultContents], (insertErr) => {
+                if (insertErr) console.error('Error seeding edukasi contents:', insertErr);
+                else console.log('Default edukasi contents seeded.');
+            });
+        }
+    });
+
+    // Insert default inventaris
+    db.query("SELECT COUNT(*) as count FROM inventaris", (err, results) => {
+        if (results && results[0].count === 0) {
+            const defaultInventaris = [
+                ['Pupuk Kompos Organik', 'Kompos', 50, 'Kg'],
+                ['Sayur Bayam', 'Sayur', 120, 'Ikat'],
+                ['Tas Rajut Plastik', 'Kerajinan', 15, 'Unit']
+            ];
+            const sql = "INSERT INTO inventaris (nama_barang, kategori, kuantitas, satuan) VALUES ?";
+            db.query(sql, [defaultInventaris], (insertErr) => {
+                if (insertErr) console.error('Error seeding inventaris:', insertErr);
+                else console.log('Default inventaris seeded.');
+            });
         }
     });
 }

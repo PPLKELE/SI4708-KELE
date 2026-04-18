@@ -6,6 +6,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/Dashboard';
 import DataPekerja from './pages/admin/DataPekerja';
+import Edukasi from './pages/Edukasi';
+import Inventaris from './pages/admin/Inventaris';
 import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
@@ -23,6 +25,8 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="pekerja" element={<DataPekerja />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
+            <Route path="edukasi" element={<Edukasi />} />
+            <Route path="inventaris" element={<Inventaris />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
