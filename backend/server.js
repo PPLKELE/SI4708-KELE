@@ -40,6 +40,28 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+// 1.5 Auth Register
+app.post('/api/register', (req, res) => {
+    const { nama, email, password, role } = req.body;
+
+    if (!nama || !email || !password || !role) {
+        return res.status(400).json({ error: 'Semua field harus diisi' });
+    }
+
+    db.query('SELECT id FROM users WHERE email = ?', [email], (err, results) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (results && results.length > 0) return res.status(400).json({ error: 'Email sudah terdaftar' });
+
+        const password_hash = bcrypt.hashSync(password, 8);
+        db.query('INSERT INTO users (nama, email, password_hash, role) VALUES (?, ?, ?, ?)',
+            [nama, email, password_hash, role], (insertErr, result) => {
+            if (insertErr) return res.status(500).json({ error: 'Gagal mendaftarkan pengguna' });
+            
+            res.status(201).json({ message: 'Registrasi berhasil', id: result.insertId });
+        });
+    });
+});
+
 // 2. Dashboard Stats
 app.get('/api/dashboard/stats', authenticateToken, (req, res) => {
     db.query('SELECT COUNT(*) as workerCount FROM workers', (err, wRes) => {

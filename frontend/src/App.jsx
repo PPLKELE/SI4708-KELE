@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { AuthProvider } from './context/AuthContext';
 import { Layout } from './components/Layout';
 import Login from './pages/Login';
+import Register from './pages/Register';
 import AdminDashboard from './pages/admin/Dashboard';
 import DataPekerja from './pages/admin/DataPekerja';
 import PengawasDashboard from './pages/pengawas/Dashboard';
@@ -14,6 +15,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           
           {/* Admin Routes */}
           <Route path="/admin" element={<Layout requireRole="admin" />}>
