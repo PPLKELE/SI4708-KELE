@@ -1,10 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Check, Clock } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
-
 const Logbook = () => {
-  const { user } = useAuth();
-  const [schedules, setSchedules] = schedule => useState([]);
+  const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form State

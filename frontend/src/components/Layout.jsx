@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, UserSquare, Calendar, LogOut, Leaf } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare, Calendar, LogOut, Leaf, Coins } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => (
   <Link to={to} className={`nav-item ${active ? 'active' : ''}`}>
@@ -31,12 +31,14 @@ export const Layout = ({ requireRole }) => {
     ? [
         { icon: LayoutDashboard, label: 'Dashboard Admin', to: '/admin/dashboard' },
         { icon: Users, label: 'Data Pekerja', to: '/admin/pekerja' },
+        { icon: Coins, label: 'Insentif & Upah', to: '/admin/ekonomi' },
         { icon: UserSquare, label: 'Keluarga Miskin', to: '#keluarga' },
         { icon: Calendar, label: 'Program Mikro', to: '#program' }
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
-        { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' }
+        { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' },
+        { icon: Coins, label: 'Insentif & Upah', to: '/pengawas/ekonomi' }
       ];
 
   return (

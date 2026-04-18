@@ -149,6 +149,198 @@ app.post('/api/logbooks', authenticateToken, (req, res) => {
     });
 });
 
+// --- 9. Ekonomi & Insentif (SDG 1) ---
+function parseYearMonth(req) {
+    const now = new Date();
+    let tahun = parseInt(req.query.tahun, 10);
+    let bulan = parseInt(req.query.bulan, 10);
+    if (!Number.isFinite(tahun)) tahun = now.getFullYear();
+    if (!Number.isFinite(bulan)) bulan = now.getMonth() + 1;
+    bulan = Math.min(12, Math.max(1, bulan));
+    return { tahun, bulan };
+}
+
+// Kalkulator akumulasi upah per bulan (default: bulan berjalan)
+app.get('/api/insentif/akumulasi/:worker_id', authenticateToken, (req, res) => {
+    const workerId = parseInt(req.params.worker_id, 10);
+    if (!Number.isFinite(workerId)) {
+        return res.status(400).json({ error: 'worker_id tidak valid' });
+    }
+    const { tahun, bulan } = parseYearMonth(req);
+
+    db.query('SELECT id FROM workers WHERE id = ?', [workerId], (err, w) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!w || w.length === 0) return res.status(404).json({ error: 'Pekerja tidak ditemukan' });
+
+        const sumSql = `
+            SELECT COALESCE(SUM(jumlah_upah), 0) AS total_upah, COUNT(*) AS jumlah_entri
+            FROM insentif
+            WHERE worker_id = ? AND YEAR(tanggal) = ? AND MONTH(tanggal) = ?
+        `;
+        db.query(sumSql, [workerId, tahun, bulan], (err2, sumRows) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            const perJenisSql = `
+                SELECT jenis_insentif, COALESCE(SUM(jumlah_upah), 0) AS subtotal
+                FROM insentif
+                WHERE worker_id = ? AND YEAR(tanggal) = ? AND MONTH(tanggal) = ?
+                GROUP BY jenis_insentif
+                ORDER BY subtotal DESC
+            `;
+            db.query(perJenisSql, [workerId, tahun, bulan], (err3, perJenis) => {
+                if (err3) return res.status(500).json({ error: err3.message });
+                const row = sumRows[0] || {};
+                const total = Number(row.total_upah);
+                res.json({
+                    worker_id: workerId,
+                    periode: { tahun, bulan, label: `${String(bulan).padStart(2, '0')}/${tahun}` },
+                    total_upah: total,
+                    jumlah_entri: Number(row.jumlah_entri) || 0,
+                    per_jenis: (perJenis || []).map((r) => ({
+                        jenis_insentif: r.jenis_insentif,
+                        subtotal: Number(r.subtotal)
+                    }))
+                });
+            });
+        });
+    });
+});
+
+// Riwayat pendapatan / insentif pekerja
+app.get('/api/insentif/riwayat/:worker_id', authenticateToken, (req, res) => {
+    const workerId = parseInt(req.params.worker_id, 10);
+    if (!Number.isFinite(workerId)) {
+        return res.status(400).json({ error: 'worker_id tidak valid' });
+    }
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+
+    db.query('SELECT id FROM workers WHERE id = ?', [workerId], (err, w) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!w || w.length === 0) return res.status(404).json({ error: 'Pekerja tidak ditemukan' });
+
+        const sql = `
+            SELECT id, worker_id, tanggal, jumlah_upah, jenis_insentif, keterangan, created_at
+            FROM insentif
+            WHERE worker_id = ?
+            ORDER BY tanggal DESC, id DESC
+            LIMIT ?
+        `;
+        db.query(sql, [workerId, limit], (err2, rows) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({
+                worker_id: workerId,
+                jumlah: rows.length,
+                riwayat: rows.map((r) => ({
+                    id: r.id,
+                    tanggal: r.tanggal,
+                    jumlah_upah: Number(r.jumlah_upah),
+                    jenis_insentif: r.jenis_insentif,
+                    keterangan: r.keterangan,
+                    created_at: r.created_at
+                }))
+            });
+        });
+    });
+});
+
+// Catat insentif / upah baru (mis. setelah validasi kerja)
+app.post('/api/insentif', authenticateToken, (req, res) => {
+    const { worker_id, tanggal, jumlah_upah, jenis_insentif, keterangan } = req.body;
+    const wid = parseInt(worker_id, 10);
+    const jumlah = Number(jumlah_upah);
+    if (!Number.isFinite(wid)) {
+        return res.status(400).json({ error: 'worker_id wajib dan harus angka' });
+    }
+    if (!jenis_insentif || typeof jenis_insentif !== 'string') {
+        return res.status(400).json({ error: 'jenis_insentif wajib diisi' });
+    }
+    if (!Number.isFinite(jumlah) || jumlah < 0) {
+        return res.status(400).json({ error: 'jumlah_upah harus angka non-negatif' });
+    }
+    const tgl = tanggal || new Date().toISOString().slice(0, 10);
+
+    db.query('SELECT id FROM workers WHERE id = ?', [wid], (err, w) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!w || w.length === 0) return res.status(404).json({ error: 'Pekerja tidak ditemukan' });
+
+        db.query(
+            `INSERT INTO insentif (worker_id, tanggal, jumlah_upah, jenis_insentif, keterangan) VALUES (?,?,?,?,?)`,
+            [wid, tgl, jumlah, jenis_insentif.trim(), keterangan || null],
+            function (err2, result) {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.status(201).json({
+                    ok: true,
+                    data: {
+                        id: result.insertId,
+                        worker_id: wid,
+                        tanggal: tgl,
+                        jumlah_upah: jumlah,
+                        jenis_insentif: jenis_insentif.trim(),
+                        keterangan: keterangan || null
+                    }
+                });
+            }
+        );
+    });
+});
+
+// Penghargaan pekerja
+app.post('/api/rewards', authenticateToken, (req, res) => {
+    const { worker_id, nama_penghargaan, tanggal_pemberian } = req.body;
+    const wid = parseInt(worker_id, 10);
+    if (!Number.isFinite(wid)) {
+        return res.status(400).json({ error: 'worker_id wajib dan harus angka' });
+    }
+    if (!nama_penghargaan || typeof nama_penghargaan !== 'string') {
+        return res.status(400).json({ error: 'nama_penghargaan wajib diisi' });
+    }
+    const tgl = tanggal_pemberian || new Date().toISOString().slice(0, 10);
+
+    db.query('SELECT id FROM workers WHERE id = ?', [wid], (err, w) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!w || w.length === 0) return res.status(404).json({ error: 'Pekerja tidak ditemukan' });
+
+        db.query(
+            `INSERT INTO rewards (worker_id, nama_penghargaan, tanggal_pemberian) VALUES (?,?,?)`,
+            [wid, nama_penghargaan.trim(), tgl],
+            function (err2, result) {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.status(201).json({
+                    ok: true,
+                    data: {
+                        id: result.insertId,
+                        worker_id: wid,
+                        nama_penghargaan: nama_penghargaan.trim(),
+                        tanggal_pemberian: tgl
+                    }
+                });
+            }
+        );
+    });
+});
+
+app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
+    const workerId = parseInt(req.params.worker_id, 10);
+    if (!Number.isFinite(workerId)) {
+        return res.status(400).json({ error: 'worker_id tidak valid' });
+    }
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 500);
+
+    db.query('SELECT id FROM workers WHERE id = ?', [workerId], (err, w) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!w || w.length === 0) return res.status(404).json({ error: 'Pekerja tidak ditemukan' });
+
+        db.query(
+            `SELECT id, worker_id, nama_penghargaan, tanggal_pemberian, created_at
+             FROM rewards WHERE worker_id = ? ORDER BY tanggal_pemberian DESC, id DESC LIMIT ?`,
+            [workerId, limit],
+            (err2, rows) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                res.json({ worker_id: workerId, jumlah: rows.length, riwayat: rows });
+            }
+        );
+    });
+});
+
 /* Simple Test API */
 app.get('/ping', (req, res) => res.json({ message: "pong" }));
 
