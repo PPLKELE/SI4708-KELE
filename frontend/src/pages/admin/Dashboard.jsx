@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserSquare, Calendar, TrendingUp } from 'lucide-react';
+import { Users, UserSquare, Calendar, TrendingUp, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const AdminDashboard = () => {
@@ -80,7 +80,7 @@ const AdminDashboard = () => {
               <div className="stat-value">{loading ? '...' : stats.total_programs}</div>
             </div>
             <div style={{ padding: '0.75rem', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', borderRadius: 'var(--radius-sm)' }}>
-              <LayoutDashboard size={24} /> // Assuming LayoutDashboard import is available globally, using inline here might fail, let's just use Calendar
+              <LayoutDashboard size={24} />
             </div>
           </div>
           <div style={{ marginTop: '1rem', fontSize: '0.8rem', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
