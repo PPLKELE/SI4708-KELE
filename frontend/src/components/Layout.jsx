@@ -1,12 +1,15 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, UserSquare, Calendar, LogOut, Leaf, Coins } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => (
   <Link to={to} className={`nav-item ${active ? 'active' : ''}`}>
-    <Icon size={20} />
-    <span>{label}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      <Icon size={20} />
+      <span>{label}</span>
+    </div>
+    {active && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
   </Link>
 );
 
@@ -29,30 +32,26 @@ export const Layout = ({ requireRole }) => {
 
   const navItems = user.role === 'admin' 
     ? [
-        { icon: LayoutDashboard, label: 'Dashboard Admin', to: '/admin/dashboard' },
-        { icon: Users, label: 'Data Pekerja', to: '/admin/pekerja' },
-        { icon: Coins, label: 'Insentif & Upah', to: '/admin/ekonomi' },
-        { icon: UserSquare, label: 'Keluarga Miskin', to: '#keluarga' },
-        { icon: Calendar, label: 'Program Mikro', to: '#program' }
+        { icon: LayoutDashboard, label: 'Dashboard', to: '/admin/dashboard' },
+        { icon: FileText, label: 'Tugas', to: '/admin/tugas' },
+        { icon: PieChart, label: 'Profiling', to: '/admin/profiling' },
+        { icon: DollarSign, label: 'Keuangan', to: '/admin/ekonomi' },
+        { icon: Users, label: 'Pengawas', to: '/admin/pengawas' },
+        { icon: BookOpen, label: 'Edukasi', to: '/admin/edukasi' },
+        { icon: Package, label: 'Inventaris', to: '/admin/inventaris' }
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
         { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' },
-        { icon: Coins, label: 'Insentif & Upah', to: '/pengawas/ekonomi' }
+        { icon: DollarSign, label: 'Insentif & Upah', to: '/pengawas/ekonomi' }
       ];
 
   return (
     <div className="app-container">
       <aside className="sidebar">
         <div className="sidebar-logo">
-          <Leaf size={28} />
-          <span>Work4Village</span>
-        </div>
-        
-        <div style={{ marginBottom: '2rem', padding: '1rem', background: 'var(--background)', borderRadius: 'var(--radius-sm)' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.2rem' }}>Role Aktif</div>
-          <div style={{ fontWeight: '600', color: 'var(--primary)', textTransform: 'capitalize' }}>{user.role}</div>
-          <div style={{ fontSize: '0.85rem', marginTop: '0.2rem' }}>{user.nama}</div>
+          <div style={{ background: 'var(--primary)', color: 'white', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>W</div>
+          <span style={{ color: 'var(--text-main)' }}>Work4Village</span>
         </div>
 
         <nav className="sidebar-nav">
@@ -68,15 +67,41 @@ export const Layout = ({ requireRole }) => {
         </nav>
 
         <div className="sidebar-footer">
-          <button onClick={handleLogout} className="nav-item" style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger)' }}>
+          <button onClick={handleLogout} className="nav-item" style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
             <LogOut size={20} />
-            <span>Keluar Sistem</span>
+            <span>Keluar</span>
           </button>
         </div>
       </aside>
 
-      <main className="main-content">
-        <Outlet />
+      <main className="main-content" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+        <header className="topbar">
+          <div className="search-container">
+            <Search className="search-icon" size={18} />
+            <input type="text" className="search-input" placeholder="Cari data, tugas, atau profiling..." />
+          </div>
+
+          <div className="topbar-actions">
+            <button className="icon-btn">
+              <Bell size={20} />
+              <div className="badge-dot"></div>
+            </button>
+            <button className="icon-btn">
+              <Mail size={20} />
+            </button>
+            <div className="user-profile">
+              <div className="user-info">
+                <div className="user-name">{user.nama || 'Asep Kumala'}</div>
+                <div className="user-role">{user.role === 'admin' ? 'Administrator' : 'Pengawas'}</div>
+              </div>
+              <img src="https://i.pravatar.cc/150?img=11" alt="Avatar" className="avatar" />
+            </div>
+          </div>
+        </header>
+
+        <div style={{ flex: 1, overflowY: 'auto' }}>
+          <Outlet />
+        </div>
       </main>
     </div>
   );
