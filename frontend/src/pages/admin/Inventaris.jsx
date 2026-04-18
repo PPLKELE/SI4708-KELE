@@ -7,14 +7,14 @@ const Inventaris = () => {
     const [showAddForm, setShowAddForm] = useState(false);
     const [activeAction, setActiveAction] = useState(null); // { id, type: 'tambah' | 'kurang' | 'jual' | 'history' }
     const [historyData, setHistoryData] = useState([]);
-    
+
     const [formData, setFormData] = useState({
         nama_barang: '',
         kategori: 'Kompos',
         kuantitas: '',
         satuan: 'Kg'
     });
-    
+
     const [adjustData, setAdjustData] = useState({
         jumlah: '',
         keterangan: '',
@@ -113,8 +113,8 @@ const Inventaris = () => {
         return '#6b7280'; // gray
     };
 
-    const filteredItems = items.filter(i => 
-        i.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    const filteredItems = items.filter(i =>
+        i.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) ||
         i.kategori.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -139,12 +139,12 @@ const Inventaris = () => {
                         <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Nama Barang</label>
-                                <input type="text" className="search-input" style={{ width: '100%' }} value={formData.nama_barang} onChange={e => setFormData({...formData, nama_barang: e.target.value})} required placeholder="Cth: Hasil Panen Pakcoy" />
+                                <input type="text" className="search-input" style={{ width: '100%' }} value={formData.nama_barang} onChange={e => setFormData({ ...formData, nama_barang: e.target.value })} required placeholder="Cth: Hasil Panen Pakcoy" />
                             </div>
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Kategori</label>
-                                    <select className="search-input" style={{ width: '100%' }} value={formData.kategori} onChange={e => setFormData({...formData, kategori: e.target.value})}>
+                                    <select className="search-input" style={{ width: '100%' }} value={formData.kategori} onChange={e => setFormData({ ...formData, kategori: e.target.value })}>
                                         <option value="Kompos">Kompos</option>
                                         <option value="Sayur">Sayur</option>
                                         <option value="Kerajinan">Kerajinan</option>
@@ -154,7 +154,7 @@ const Inventaris = () => {
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Satuan</label>
-                                    <select className="search-input" style={{ width: '100%' }} value={formData.satuan} onChange={e => setFormData({...formData, satuan: e.target.value})}>
+                                    <select className="search-input" style={{ width: '100%' }} value={formData.satuan} onChange={e => setFormData({ ...formData, satuan: e.target.value })}>
                                         <option value="Kg">Kilogram (Kg)</option>
                                         <option value="Ikat">Ikat</option>
                                         <option value="Unit">Unit</option>
@@ -165,7 +165,7 @@ const Inventaris = () => {
                             </div>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Stok Awal</label>
-                                <input type="number" step="0.1" className="search-input" style={{ width: '100%' }} value={formData.kuantitas} onChange={e => setFormData({...formData, kuantitas: e.target.value})} placeholder="0" />
+                                <input type="number" step="0.1" className="search-input" style={{ width: '100%' }} value={formData.kuantitas} onChange={e => setFormData({ ...formData, kuantitas: e.target.value })} placeholder="0" />
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
                                 <button type="button" className="btn btn-outline" onClick={() => setShowAddForm(false)}>Batal</button>
@@ -181,38 +181,38 @@ const Inventaris = () => {
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '450px' }}>
                         <h3 style={{ marginBottom: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', color: activeAction.type === 'tambah' ? '#10b981' : (activeAction.type === 'jual' ? '#f59e0b' : '#ef4444') }}>
-                            {activeAction.type === 'tambah' && <ArrowDownToLine/>}
-                            {activeAction.type === 'kurang' && <ArrowUpToLine/>}
-                            {activeAction.type === 'jual' && <ShoppingCart/>}
+                            {activeAction.type === 'tambah' && <ArrowDownToLine />}
+                            {activeAction.type === 'kurang' && <ArrowUpToLine />}
+                            {activeAction.type === 'jual' && <ShoppingCart />}
                             {activeAction.type === 'tambah' ? 'Tambah Stok Masuk' : (activeAction.type === 'jual' ? 'Penjualan Barang' : 'Distribusi Gratis (Keluar)')}
                         </h3>
                         <form onSubmit={handleAdjustStock} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
-                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Jumlah ({items.find(i=>i.id===activeAction.id)?.satuan})</label>
-                                <input type="number" step="0.1" min="0.1" className="search-input" style={{ width: '100%' }} value={adjustData.jumlah} onChange={e => setAdjustData({...adjustData, jumlah: e.target.value})} required placeholder="Cth: 5" />
+                                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Jumlah ({items.find(i => i.id === activeAction.id)?.satuan})</label>
+                                <input type="number" step="0.1" min="0.1" className="search-input" style={{ width: '100%' }} value={adjustData.jumlah} onChange={e => setAdjustData({ ...adjustData, jumlah: e.target.value })} required placeholder="Cth: 5" />
                             </div>
 
                             {activeAction.type === 'jual' && (
                                 <div style={{ display: 'flex', gap: '1rem' }}>
                                     <div style={{ flex: 1 }}>
                                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Nama Pembeli</label>
-                                        <input type="text" className="search-input" style={{ width: '100%' }} value={adjustData.pembeli} onChange={e => setAdjustData({...adjustData, pembeli: e.target.value})} required placeholder="Bapak Budi..." />
+                                        <input type="text" className="search-input" style={{ width: '100%' }} value={adjustData.pembeli} onChange={e => setAdjustData({ ...adjustData, pembeli: e.target.value })} required placeholder="Bapak Budi..." />
                                     </div>
                                     <div style={{ flex: 1 }}>
                                         <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Total Harga Jual (Rp)</label>
-                                        <input type="number" min="0" className="search-input" style={{ width: '100%' }} value={adjustData.harga} onChange={e => setAdjustData({...adjustData, harga: e.target.value})} required placeholder="150000" />
+                                        <input type="number" min="0" className="search-input" style={{ width: '100%' }} value={adjustData.harga} onChange={e => setAdjustData({ ...adjustData, harga: e.target.value })} required placeholder="150000" />
                                     </div>
                                 </div>
                             )}
 
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Catatan / Keterangan</label>
-                                <textarea className="search-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={adjustData.keterangan} onChange={e => setAdjustData({...adjustData, keterangan: e.target.value})} placeholder={activeAction.type === 'kurang' ? 'Dibagikan ke warga RT 01...' : (activeAction.type === 'jual' ? 'Dijual eceran ke pasar...' : 'Hasil panen minggu ke-2...')} required={activeAction.type !== 'jual'} />
+                                <textarea className="search-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={adjustData.keterangan} onChange={e => setAdjustData({ ...adjustData, keterangan: e.target.value })} placeholder={activeAction.type === 'kurang' ? 'Dibagikan ke warga RT 01...' : (activeAction.type === 'jual' ? 'Dijual eceran ke pasar...' : 'Hasil panen minggu ke-2...')} required={activeAction.type !== 'jual'} />
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                                <button type="button" className="btn btn-outline" onClick={() => { setActiveAction(null); setAdjustData({jumlah:'', keterangan:'', pembeli:'', harga:''}); }}>Batal</button>
+                                <button type="button" className="btn btn-outline" onClick={() => { setActiveAction(null); setAdjustData({ jumlah: '', keterangan: '', pembeli: '', harga: '' }); }}>Batal</button>
                                 <button type="submit" className="btn" style={{ background: activeAction.type === 'tambah' ? '#10b981' : (activeAction.type === 'jual' ? '#f59e0b' : '#ef4444'), color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    {activeAction.type === 'jual' && <ShoppingCart size={16} />} 
+                                    {activeAction.type === 'jual' && <ShoppingCart size={16} />}
                                     Konfirmasi {activeAction.type === 'tambah' ? 'Masuk' : (activeAction.type === 'jual' ? 'Penjualan' : 'Keluar')}
                                 </button>
                             </div>
@@ -227,7 +227,7 @@ const Inventaris = () => {
                     <div style={{ background: 'white', padding: '0', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
                         <div style={{ padding: '1.5rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <History className="text-primary"/> Riwayat Transaksi Stok: {items.find(i=>i.id===activeAction.id)?.nama_barang}
+                                <History className="text-primary" /> Riwayat Transaksi Stok: {items.find(i => i.id === activeAction.id)?.nama_barang}
                             </h3>
                             <button onClick={() => setActiveAction(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
                         </div>
@@ -239,7 +239,7 @@ const Inventaris = () => {
                                     {historyData.map(h => (
                                         <div key={h.id} style={{ display: 'flex', gap: '1rem', padding: '1rem', border: '1px solid #eee', borderRadius: '8px', background: h.tipe_perubahan === 'tambah' ? '#ecfdf5' : '#fef2f2' }}>
                                             <div style={{ color: h.tipe_perubahan === 'tambah' ? '#10b981' : '#ef4444' }}>
-                                                {h.tipe_perubahan === 'tambah' ? <ArrowDownToLine size={24}/> : <ArrowUpToLine size={24}/>}
+                                                {h.tipe_perubahan === 'tambah' ? <ArrowDownToLine size={24} /> : <ArrowUpToLine size={24} />}
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -249,7 +249,7 @@ const Inventaris = () => {
                                                     <span style={{ fontSize: '0.8rem', color: '#666' }}>{new Date(h.created_at).toLocaleString('id-ID')}</span>
                                                 </div>
                                                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', margin: '0.25rem 0', color: '#333' }}>
-                                                    {h.tipe_perubahan === 'tambah' ? '+' : '-'}{Number(h.jumlah_perubahan)} {items.find(i=>i.id===activeAction.id)?.satuan}
+                                                    {h.tipe_perubahan === 'tambah' ? '+' : '-'}{Number(h.jumlah_perubahan)} {items.find(i => i.id === activeAction.id)?.satuan}
                                                 </div>
                                                 <p style={{ fontSize: '0.875rem', color: '#555', margin: 0 }}>{h.keterangan}</p>
                                             </div>
