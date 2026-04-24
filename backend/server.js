@@ -363,6 +363,55 @@ app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
     });
 });
 
+// --- 10. Dashboard Analisis ---
+app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
+    const queryTotalWarga = 'SELECT COUNT(DISTINCT worker_id) as total FROM insentif';
+    const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
+    const queryTren = `
+        SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(DISTINCT worker_id) as partisipasi 
+        FROM insentif 
+        GROUP BY DATE_FORMAT(tanggal, '%Y-%m') 
+        ORDER BY bulan ASC LIMIT 6
+    `;
+    const querySebaran = `
+        SELECT jenis_program as name, COUNT(*) as value 
+        FROM micro_programs 
+        GROUP BY jenis_program
+    `;
+    const queryCapaian = `
+        SELECT id, nama_program, jenis_program, status, tanggal_mulai, tanggal_selesai 
+        FROM micro_programs 
+        ORDER BY tanggal_selesai DESC LIMIT 10
+    `;
+
+    db.query(queryTotalWarga, (err, resWarga) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.query(queryTotalInsentif, (err, resInsentif) => {
+            if (err) return res.status(500).json({ error: err.message });
+            db.query(queryTren, (err, resTren) => {
+                if (err) return res.status(500).json({ error: err.message });
+                db.query(querySebaran, (err, resSebaran) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    db.query(queryCapaian, (err, resCapaian) => {
+                        if (err) return res.status(500).json({ error: err.message });
+                        
+                        const dampakLingkungan = { value: 1250, unit: "Kg Sampah Dikelola" };
+
+                        res.json({
+                            total_warga_bekerja: resWarga[0].total,
+                            total_insentif: resInsentif[0].total,
+                            dampak_lingkungan: dampakLingkungan,
+                            tren_partisipasi: resTren,
+                            sebaran_program: resSebaran.map(s => ({ name: s.name || 'Lainnya', value: s.value })),
+                            rincian_capaian: resCapaian
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 /* Simple Test API */
 app.get('/ping', (req, res) => res.json({ message: "pong" }));
 
