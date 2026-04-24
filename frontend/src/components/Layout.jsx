@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2 } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2, AlertTriangle } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => (
   <Link to={to} className={`nav-item ${active ? 'active' : ''}`}>
