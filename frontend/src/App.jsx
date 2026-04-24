@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/admin/Dashboard';
+import DashboardAnalisis from './pages/admin/DashboardAnalisis';
 import DataPekerja from './pages/admin/DataPekerja';
 import Edukasi from './pages/Edukasi';
 import Inventaris from './pages/admin/Inventaris';
@@ -25,6 +26,7 @@ function App() {
           {/* Admin Routes */}
           <Route path="/admin" element={<Layout requireRole="admin" />}>
             <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="analisis" element={<DashboardAnalisis />} />
             <Route path="pekerja" element={<DataPekerja />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
             <Route path="edukasi" element={<Edukasi />} />

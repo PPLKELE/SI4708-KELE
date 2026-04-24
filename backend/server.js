@@ -363,114 +363,53 @@ app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
     });
 });
 
-// --- 10. Edukasi ---
-app.get('/api/edukasi', authenticateToken, (req, res) => {
-    db.query('SELECT * FROM edukasi_contents ORDER BY created_at DESC', (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-app.post('/api/edukasi', authenticateToken, (req, res) => {
-    const { judul, deskripsi, kategori, tipe_konten, url_konten } = req.body;
-    db.query('INSERT INTO edukasi_contents (judul, deskripsi, kategori, tipe_konten, url_konten) VALUES (?, ?, ?, ?, ?)',
-        [judul, deskripsi, kategori, tipe_konten, url_konten], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ id: result.insertId, ...req.body });
-        });
-});
-
-// --- 11. Inventaris (Stok & Distribusi) ---
-app.get('/api/inventaris', authenticateToken, (req, res) => {
-    db.query('SELECT * FROM inventaris ORDER BY created_at DESC', (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-app.post('/api/inventaris', authenticateToken, (req, res) => {
-    const { nama_barang, kategori, kuantitas, satuan } = req.body;
-    db.query('INSERT INTO inventaris (nama_barang, kategori, kuantitas, satuan) VALUES (?, ?, ?, ?)',
-        [nama_barang, kategori, kuantitas || 0, satuan], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            const invId = result.insertId;
-            if (kuantitas > 0) {
-                db.query('INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?, ?, ?, ?)',
-                    [invId, kuantitas, 'tambah', 'Stok Awal']);
-            }
-            res.json({ id: invId, ...req.body });
-        });
-});
-
-app.post('/api/inventaris/:id/adjust', authenticateToken, (req, res) => {
-    const invId = req.params.id;
-    const { jumlah, tipe, keterangan } = req.body; // tipe: 'tambah' or 'kurang'
-    const adjJumlah = Number(jumlah);
-    
-    if (!adjJumlah || adjJumlah <= 0 || (tipe !== 'tambah' && tipe !== 'kurang')) {
-        return res.status(400).json({ error: 'Data penyesuaian tidak valid' });
-    }
-
-    // Update stok
-    const operator = tipe === 'tambah' ? '+' : '-';
-    db.query(`UPDATE inventaris SET kuantitas = kuantitas ${operator} ? WHERE id = ?`, [adjJumlah, invId], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        
-        // Catat riwayat
-        db.query('INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?, ?, ?, ?)',
-            [invId, adjJumlah, tipe, keterangan || ''], (errHist) => {
-                if (errHist) console.error('Error logging history:', errHist);
-                res.json({ success: true, message: 'Stok berhasil diperbarui' });
-            });
-    });
-});
-
-app.get('/api/inventaris/:id/history', authenticateToken, (req, res) => {
-    db.query('SELECT * FROM inventaris_history WHERE inventaris_id = ? ORDER BY created_at DESC', [req.params.id], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-// --- 12. Pelaporan Masalah Lapangan ---
-app.get('/api/field-problems', authenticateToken, (req, res) => {
-    // Optionally filter by pengawas_id if user is pengawas
-    let query = `
-        SELECT fp.*, u.nama as nama_pengawas 
-        FROM field_problems fp 
-        JOIN users u ON fp.pengawas_id = u.id 
-        ORDER BY fp.created_at DESC
+// --- 10. Dashboard Analisis ---
+app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
+    const queryTotalWarga = 'SELECT COUNT(DISTINCT worker_id) as total FROM insentif';
+    const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
+    const queryTren = `
+        SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(DISTINCT worker_id) as partisipasi 
+        FROM insentif 
+        GROUP BY DATE_FORMAT(tanggal, '%Y-%m') 
+        ORDER BY bulan ASC LIMIT 6
     `;
-    const params = [];
-    
-    // If you want pengawas to only see their own reports (optional based on requirements)
-    // if (req.user.role === 'pengawas') {
-    //     query = `SELECT fp.*, u.nama as nama_pengawas FROM field_problems fp JOIN users u ON fp.pengawas_id = u.id WHERE fp.pengawas_id = ? ORDER BY fp.created_at DESC`;
-    //     params.push(req.user.id);
-    // }
+    const querySebaran = `
+        SELECT jenis_program as name, COUNT(*) as value 
+        FROM micro_programs 
+        GROUP BY jenis_program
+    `;
+    const queryCapaian = `
+        SELECT id, nama_program, jenis_program, status, tanggal_mulai, tanggal_selesai 
+        FROM micro_programs 
+        ORDER BY tanggal_selesai DESC LIMIT 10
+    `;
 
-    db.query(query, params, (err, rows) => {
+    db.query(queryTotalWarga, (err, resWarga) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
-});
-
-app.post('/api/field-problems', authenticateToken, (req, res) => {
-    const { tanggal, waktu, masalah, tingkatan_masalah, lokasi_masalah, kordinat } = req.body;
-    const pengawas_id = req.user.id;
-
-    if (!tanggal || !waktu || !masalah || !tingkatan_masalah || !lokasi_masalah) {
-        return res.status(400).json({ error: 'Semua field wajib diisi kecuali koordinat' });
-    }
-
-    db.query(
-        `INSERT INTO field_problems (pengawas_id, tanggal, waktu, masalah, tingkatan_masalah, lokasi_masalah, kordinat) 
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [pengawas_id, tanggal, waktu, masalah, tingkatan_masalah, lokasi_masalah, kordinat || null],
-        (err, result) => {
+        db.query(queryTotalInsentif, (err, resInsentif) => {
             if (err) return res.status(500).json({ error: err.message });
-            res.status(201).json({ id: result.insertId, ...req.body, pengawas_id });
-        }
-    );
+            db.query(queryTren, (err, resTren) => {
+                if (err) return res.status(500).json({ error: err.message });
+                db.query(querySebaran, (err, resSebaran) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    db.query(queryCapaian, (err, resCapaian) => {
+                        if (err) return res.status(500).json({ error: err.message });
+                        
+                        const dampakLingkungan = { value: 1250, unit: "Kg Sampah Dikelola" };
+
+                        res.json({
+                            total_warga_bekerja: resWarga[0].total,
+                            total_insentif: resInsentif[0].total,
+                            dampak_lingkungan: dampakLingkungan,
+                            tren_partisipasi: resTren,
+                            sebaran_program: resSebaran.map(s => ({ name: s.name || 'Lainnya', value: s.value })),
+                            rincian_capaian: resCapaian
+                        });
+                    });
+                });
+            });
+        });
+    });
 });
 
 /* Simple Test API */

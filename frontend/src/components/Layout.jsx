@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, AlertTriangle } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2 } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => (
   <Link to={to} className={`nav-item ${active ? 'active' : ''}`}>
@@ -38,7 +38,8 @@ export const Layout = ({ requireRole }) => {
         { icon: DollarSign, label: 'Keuangan', to: '/admin/ekonomi' },
         { icon: Users, label: 'Pengawas', to: '/admin/pengawas' },
         { icon: BookOpen, label: 'Edukasi', to: '/admin/edukasi' },
-        { icon: Package, label: 'Inventaris', to: '/admin/inventaris' }
+        { icon: Package, label: 'Inventaris', to: '/admin/inventaris' },
+        { icon: BarChart2, label: 'Dashboard Analisis', to: '/admin/analisis' }
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
