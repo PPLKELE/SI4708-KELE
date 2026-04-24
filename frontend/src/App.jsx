@@ -12,6 +12,8 @@ import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
 
+import PelaporanMasalah from './pages/PelaporanMasalah';
+
 function App() {
   return (
     <AuthProvider>
@@ -27,6 +29,7 @@ function App() {
             <Route path="ekonomi" element={<EkonomiInsentif />} />
             <Route path="edukasi" element={<Edukasi />} />
             <Route path="inventaris" element={<Inventaris />} />
+            <Route path="pengawas" element={<PelaporanMasalah />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
@@ -35,6 +38,7 @@ function App() {
             <Route path="dashboard" element={<PengawasDashboard />} />
             <Route path="logbook" element={<Logbook />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
+            <Route path="pelaporan" element={<PelaporanMasalah />} />
             <Route index element={<Navigate to="/pengawas/dashboard" replace />} />
           </Route>
 

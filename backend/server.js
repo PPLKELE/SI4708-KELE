@@ -431,6 +431,47 @@ app.get('/api/inventaris/:id/history', authenticateToken, (req, res) => {
         res.json(rows);
     });
 });
+// --- 12. Pelaporan Masalah Lapangan ---
+app.get('/api/field-problems', authenticateToken, (req, res) => {
+    // Optionally filter by pengawas_id if user is pengawas
+    let query = `
+        SELECT fp.*, u.nama as nama_pengawas 
+        FROM field_problems fp 
+        JOIN users u ON fp.pengawas_id = u.id 
+        ORDER BY fp.created_at DESC
+    `;
+    const params = [];
+    
+    // If you want pengawas to only see their own reports (optional based on requirements)
+    // if (req.user.role === 'pengawas') {
+    //     query = `SELECT fp.*, u.nama as nama_pengawas FROM field_problems fp JOIN users u ON fp.pengawas_id = u.id WHERE fp.pengawas_id = ? ORDER BY fp.created_at DESC`;
+    //     params.push(req.user.id);
+    // }
+
+    db.query(query, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/field-problems', authenticateToken, (req, res) => {
+    const { tanggal, waktu, masalah, tingkatan_masalah, lokasi_masalah, kordinat } = req.body;
+    const pengawas_id = req.user.id;
+
+    if (!tanggal || !waktu || !masalah || !tingkatan_masalah || !lokasi_masalah) {
+        return res.status(400).json({ error: 'Semua field wajib diisi kecuali koordinat' });
+    }
+
+    db.query(
+        `INSERT INTO field_problems (pengawas_id, tanggal, waktu, masalah, tingkatan_masalah, lokasi_masalah, kordinat) 
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [pengawas_id, tanggal, waktu, masalah, tingkatan_masalah, lokasi_masalah, kordinat || null],
+        (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.status(201).json({ id: result.insertId, ...req.body, pengawas_id });
+        }
+    );
+});
 
 /* Simple Test API */
 app.get('/ping', (req, res) => res.json({ message: "pong" }));

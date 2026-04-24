@@ -154,6 +154,19 @@ function initDb() {
             keterangan TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (inventaris_id) REFERENCES inventaris(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS field_problems (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pengawas_id INT NOT NULL,
+            tanggal DATE NOT NULL,
+            waktu TIME NOT NULL,
+            masalah TEXT NOT NULL,
+            tingkatan_masalah ENUM('low', 'mediate', 'high') NOT NULL,
+            lokasi_masalah VARCHAR(255) NOT NULL,
+            kordinat VARCHAR(255),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (pengawas_id) REFERENCES users(id) ON DELETE CASCADE
         )`
     ];
 
