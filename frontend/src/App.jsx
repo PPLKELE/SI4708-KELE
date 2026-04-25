@@ -12,8 +12,8 @@ import Inventaris from './pages/admin/Inventaris';
 import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
-
 import PelaporanMasalah from './pages/PelaporanMasalah';
+import PerencanaanProgram from './pages/admin/PerencanaanProgram';
 
 function App() {
   return (
@@ -32,6 +32,7 @@ function App() {
             <Route path="edukasi" element={<Edukasi />} />
             <Route path="inventaris" element={<Inventaris />} />
             <Route path="pengawas" element={<PelaporanMasalah />} />
+            <Route path="program" element={<PerencanaanProgram />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
