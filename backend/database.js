@@ -69,6 +69,8 @@ function initDb() {
             nama_program VARCHAR(255) NOT NULL,
             jenis_program VARCHAR(100) NOT NULL,
             deskripsi TEXT,
+            lokasi VARCHAR(255),
+            stakeholders TEXT,
             tanggal_mulai DATE,
             tanggal_selesai DATE,
             status VARCHAR(50) DEFAULT 'planned',
@@ -174,7 +176,12 @@ function initDb() {
     let currentQuery = 0;
     const runQuery = () => {
         if (currentQuery >= tables.length) {
-            seedDefaults();
+            // Safely alter existing micro_programs table to add new columns (ignore error if column already exists)
+            db.query("ALTER TABLE micro_programs ADD COLUMN lokasi VARCHAR(255)", () => {
+                db.query("ALTER TABLE micro_programs ADD COLUMN stakeholders TEXT", () => {
+                    seedDefaults();
+                });
+            });
             return;
         }
         db.query(tables[currentQuery], (err) => {
