@@ -429,6 +429,58 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
     });
 });
 
+// --- 11. Edukasi API ---
+app.get('/api/edukasi', authenticateToken, (req, res) => {
+    db.query(`SELECT * FROM edukasi_contents ORDER BY created_at DESC`, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/edukasi', authenticateToken, (req, res) => {
+    const { judul, deskripsi, kategori, tipe_konten, url_konten } = req.body;
+    db.query(`INSERT INTO edukasi_contents (judul, deskripsi, kategori, tipe_konten, url_konten) VALUES (?,?,?,?,?)`,
+        [judul, deskripsi, kategori, tipe_konten, url_konten], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+// --- 12. Inventaris API ---
+app.get('/api/inventaris', authenticateToken, (req, res) => {
+    db.query(`SELECT * FROM inventaris ORDER BY created_at DESC`, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/inventaris', authenticateToken, (req, res) => {
+    const { nama_barang, kategori, kuantitas, satuan } = req.body;
+    db.query(`INSERT INTO inventaris (nama_barang, kategori, kuantitas, satuan) VALUES (?,?,?,?)`,
+        [nama_barang, kategori, kuantitas || 0, satuan], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+app.put('/api/inventaris/:id', authenticateToken, (req, res) => {
+    const { kuantitas } = req.body;
+    db.query(`UPDATE inventaris SET kuantitas=? WHERE id=?`,
+        [kuantitas, req.params.id], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: req.params.id, kuantitas });
+    });
+});
+
+app.post('/api/inventaris/history', authenticateToken, (req, res) => {
+    const { inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan } = req.body;
+    db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
+        [inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+    });
+});
+
 /* Simple Test API */
 app.get('/ping', (req, res) => res.json({ message: "pong" }));
 

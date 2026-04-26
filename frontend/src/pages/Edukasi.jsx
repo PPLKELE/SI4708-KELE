@@ -244,6 +244,54 @@ const Edukasi = () => {
                                     <p style={{ marginBottom: '1rem' }}>Pecahan keramik bekas rumah atau mangkuk pecah dapat diubah menjadi hiasan pot, tatakan gelas (coaster), atau meja. Gunakan lem keramik untuk merekatkan pecahan tersebut lalu lumuri celah dengan semen nat agar terlihat tertutup dan artistik bernilai jual tinggi.</p>
                                 </div>
                             )}
+
+                            {/* Bacaan: Tips Kompos */}
+                            {activeModul === 'tips-kompos' && (
+                                <div>
+                                    <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1a202c' }}>Tips & Trik: Membuat Kompos Kualitas Tinggi</h1>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>1. Jaga Rasio Karbon dan Nitrogen</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Campurkan bahan kaya karbon (daun kering, ranting, serbuk gergaji) dengan bahan kaya nitrogen (sisa sayuran, buah, ampas kopi) dengan rasio 2:1 atau 3:1. Hal ini membantu mikroorganisme bekerja lebih cepat.</p>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>2. Potong Kecil-kecil Bahan Kompos</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Semakin kecil ukuran bahan, semakin cepat proses dekomposisi terjadi. Cincang sisa sayur dan remukkan daun kering sebelum dimasukkan ke komposter.</p>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>3. Jaga Kelembapan</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Kompos yang baik harus memiliki kelembapan seperti spons yang diperas. Jika terlalu kering, tambahkan air. Jika terlalu basah, tambahkan bahan cokelat (daun kering/kertas).</p>
+                                </div>
+                            )}
+
+                            {/* Bacaan: Tips Air */}
+                            {activeModul === 'tips-air' && (
+                                <div>
+                                    <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1a202c' }}>Tips & Trik: Menghemat Air Pertanian</h1>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>1. Gunakan Mulsa Organik</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Tutup permukaan tanah di sekitar tanaman dengan mulsa organik (jerami, daun kering, atau potongan rumput). Mulsa dapat menahan penguapan air dari tanah hingga 70%.</p>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>2. Siram pada Pagi atau Sore Hari</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Hindari menyiram tanaman pada siang hari karena panas matahari akan menguapkan air sebelum diserap akar. Waktu terbaik adalah pagi hari sebelum pukul 09.00 atau sore hari setelah pukul 16.00.</p>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>3. Gunakan Sistem Irigasi Tetes</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Sistem irigasi tetes sangat efisien karena memberikan air langsung ke akar tanaman secara perlahan. Ini mengurangi limpasan air dan penguapan secara signifikan dibandingkan penyiraman manual.</p>
+                                </div>
+                            )}
+
+                            {/* Bacaan: Tips Kesehatan */}
+                            {activeModul === 'tips-kesehatan' && (
+                                <div>
+                                    <h1 style={{ fontSize: '1.8rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1a202c' }}>Tips & Trik: Keselamatan Kerja Lapangan</h1>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>1. Selalu Gunakan Alat Pelindung Diri (APD)</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Gunakan sarung tangan, sepatu bot tebal, dan topi lebar saat bekerja di lahan terbuka. Hal ini akan melindungi Anda dari benda tajam, gigitan serangga, dan sengatan matahari berlebih.</p>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>2. Cukupi Kebutuhan Cairan (Hidrasi)</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Pekerjaan fisik mengeluarkan banyak keringat. Pastikan meminum air putih setidaknya satu gelas setiap jam untuk mencegah dehidrasi, lemas, atau heatstroke (sengatan panas).</p>
+                                    
+                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginTop: '1.5rem', color: 'var(--primary)' }}>3. Lakukan Peregangan Berkala</h3>
+                                    <p style={{ marginBottom: '1rem' }}>Lakukan peregangan sederhana setiap 2 jam bekerja untuk melemaskan otot, terutama setelah melakukan gerakan berulang seperti mencangkul atau memanen. Hindari mengangkat beban terlalu berat sendirian.</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
