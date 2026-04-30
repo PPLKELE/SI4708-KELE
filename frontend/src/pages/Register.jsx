@@ -1,45 +1,44 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { Leaf } from 'lucide-react';
 
-const Login = () => {
+const Register = () => {
+  const [nama, setNama] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('pengawas');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/login', {
+      const response = await fetch('http://localhost:4000/api/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ nama, email, password, role }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Gagal melakukan registrasi');
       }
 
-      login(data.user, data.token);
+      setSuccess('Registrasi berhasil! Silakan masuk.');
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
       
-      // Redirect based on role
-      if (data.user.role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/pengawas/dashboard');
-      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -56,7 +55,7 @@ const Login = () => {
             <Leaf size={32} />
           </div>
           <h2 style={{ fontSize: '1.5rem' }}>Work4Village</h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Masuk untuk melanjutkan</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Daftar akun baru</p>
         </div>
 
         {error && (
@@ -64,8 +63,25 @@ const Login = () => {
             {error}
           </div>
         )}
+        
+        {success && (
+          <div style={{ background: '#f0fdf4', color: '#166534', padding: '0.75rem', borderRadius: 'var(--radius-sm)', marginBottom: '1.5rem', fontSize: '0.85rem', textAlign: 'center' }}>
+            {success}
+          </div>
+        )}
 
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handleRegister}>
+          <div className="form-group">
+            <label className="form-label">Nama Lengkap</label>
+            <input 
+              type="text" 
+              className="form-input" 
+              placeholder="Masukkan nama"
+              value={nama}
+              onChange={(e) => setNama(e.target.value)}
+              required
+            />
+          </div>
           <div className="form-group">
             <label className="form-label">Email</label>
             <input 
@@ -77,7 +93,7 @@ const Login = () => {
               required
             />
           </div>
-          <div className="form-group" style={{ marginBottom: '2rem' }}>
+          <div className="form-group">
             <label className="form-label">Password</label>
             <input 
               type="password" 
@@ -86,22 +102,30 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
             />
           </div>
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={isLoading}>
-            {isLoading ? 'Memproses...' : 'Masuk Sistem'}
+          <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+            <label className="form-label">Peran (Role)</label>
+            <select 
+              className="form-input"
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              required
+            >
+              <option value="pengawas">Pengawas Lapangan</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', marginBottom: '1.5rem' }} disabled={isLoading}>
+            {isLoading ? 'Memproses...' : 'Daftar Akun'}
           </button>
         </form>
         
-        <div style={{ marginTop: '2rem', textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <p>Admin: admin@village.com / admin123</p>
-          <p>Pengawas: pengawas@village.com / pengawas123</p>
-        </div>
-        
-        <div style={{ marginTop: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
-          <span style={{ color: 'var(--text-muted)' }}>Belum punya akun? </span>
-          <Link to="/register" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '500' }}>
-            Daftar di sini
+        <div style={{ textAlign: 'center', fontSize: '0.9rem' }}>
+          <span style={{ color: 'var(--text-muted)' }}>Sudah punya akun? </span>
+          <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: '500' }}>
+            Masuk di sini
           </Link>
         </div>
       </div>
@@ -109,4 +133,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Register;
