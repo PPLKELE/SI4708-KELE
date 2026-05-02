@@ -14,6 +14,7 @@ import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
 import PelaporanMasalah from './pages/PelaporanMasalah';
 import PerencanaanProgram from './pages/admin/PerencanaanProgram';
+import Produktivitas from './pages/admin/Produktivitas';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
             <Route path="inventaris" element={<Inventaris />} />
             <Route path="pengawas" element={<PelaporanMasalah />} />
             <Route path="program" element={<PerencanaanProgram />} />
+            <Route path="produktivitas" element={<Produktivitas />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 

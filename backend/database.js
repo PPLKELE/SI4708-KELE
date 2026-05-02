@@ -70,6 +70,7 @@ function initDb() {
             jenis_program VARCHAR(100) NOT NULL,
             deskripsi TEXT,
             lokasi VARCHAR(255),
+            kordinat VARCHAR(255),
             stakeholders TEXT,
             tanggal_mulai DATE,
             tanggal_selesai DATE,
@@ -169,6 +170,28 @@ function initDb() {
             kordinat VARCHAR(255),
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (pengawas_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            judul VARCHAR(255) NOT NULL,
+            pesan TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            link_url VARCHAR(255),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            sender_id INT NOT NULL,
+            receiver_id INT NOT NULL,
+            pesan TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
         )`
     ];
 
@@ -178,8 +201,10 @@ function initDb() {
         if (currentQuery >= tables.length) {
             // Safely alter existing micro_programs table to add new columns (ignore error if column already exists)
             db.query("ALTER TABLE micro_programs ADD COLUMN lokasi VARCHAR(255)", () => {
-                db.query("ALTER TABLE micro_programs ADD COLUMN stakeholders TEXT", () => {
-                    seedDefaults();
+                db.query("ALTER TABLE micro_programs ADD COLUMN kordinat VARCHAR(255)", () => {
+                    db.query("ALTER TABLE micro_programs ADD COLUMN stakeholders TEXT", () => {
+                        seedDefaults();
+                    });
                 });
             });
             return;

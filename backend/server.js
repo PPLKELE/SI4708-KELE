@@ -120,19 +120,19 @@ app.get('/api/programs', authenticateToken, (req, res) => {
 });
 
 app.post('/api/programs', authenticateToken, (req, res) => {
-    const { nama_program, jenis_program, deskripsi, lokasi, stakeholders, tanggal_mulai, tanggal_selesai } = req.body;
+    const { nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai } = req.body;
     // stakeholders is expected to be a JSON string or text from frontend
-    db.query(`INSERT INTO micro_programs (nama_program, jenis_program, deskripsi, lokasi, stakeholders, tanggal_mulai, tanggal_selesai) VALUES (?,?,?,?,?,?,?)`,
-        [nama_program, jenis_program, deskripsi, lokasi, stakeholders, tanggal_mulai, tanggal_selesai], function(err, result) {
+    db.query(`INSERT INTO micro_programs (nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai) VALUES (?,?,?,?,?,?,?,?)`,
+        [nama_program, jenis_program, deskripsi, lokasi, kordinat || null, stakeholders, tanggal_mulai, tanggal_selesai], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, ...req.body });
     });
 });
 
 app.put('/api/programs/:id', authenticateToken, (req, res) => {
-    const { nama_program, jenis_program, deskripsi, lokasi, stakeholders, tanggal_mulai, tanggal_selesai } = req.body;
-    db.query(`UPDATE micro_programs SET nama_program=?, jenis_program=?, deskripsi=?, lokasi=?, stakeholders=?, tanggal_mulai=?, tanggal_selesai=? WHERE id=?`,
-        [nama_program, jenis_program, deskripsi, lokasi, stakeholders, tanggal_mulai, tanggal_selesai, req.params.id], function(err, result) {
+    const { nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai } = req.body;
+    db.query(`UPDATE micro_programs SET nama_program=?, jenis_program=?, deskripsi=?, lokasi=?, kordinat=?, stakeholders=?, tanggal_mulai=?, tanggal_selesai=? WHERE id=?`,
+        [nama_program, jenis_program, deskripsi, lokasi, kordinat || null, stakeholders, tanggal_mulai, tanggal_selesai, req.params.id], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: req.params.id, ...req.body });
     });
@@ -382,7 +382,7 @@ app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
 
 // --- 10. Dashboard Analisis ---
 app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
-    const queryTotalWarga = 'SELECT COUNT(DISTINCT worker_id) as total FROM insentif';
+    const queryTotalWarga = 'SELECT COUNT(id) as total FROM workers';
     const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
     const queryTren = `
         SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(DISTINCT worker_id) as partisipasi 
@@ -398,8 +398,9 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
     const queryCapaian = `
         SELECT id, nama_program, jenis_program, status, tanggal_mulai, tanggal_selesai 
         FROM micro_programs 
-        ORDER BY tanggal_selesai DESC LIMIT 10
+        ORDER BY created_at DESC LIMIT 10
     `;
+    const queryDampak = `SELECT COALESCE(SUM(kuantitas), 0) as total FROM inventaris WHERE LOWER(kategori) LIKE '%sampah%' OR LOWER(kategori) LIKE '%kompos%' OR LOWER(kategori) LIKE '%organik%'`;
 
     db.query(queryTotalWarga, (err, resWarga) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -411,16 +412,32 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
                     if (err) return res.status(500).json({ error: err.message });
                     db.query(queryCapaian, (err, resCapaian) => {
                         if (err) return res.status(500).json({ error: err.message });
-                        
-                        const dampakLingkungan = { value: 1250, unit: "Kg Sampah Dikelola" };
+                        db.query(queryDampak, (err, resDampak) => {
+                            if (err) return res.status(500).json({ error: err.message });
+                            
+                            const dampakLingkungan = { value: resDampak[0].total, unit: "Kg (Kompos/Sampah)" };
 
-                        res.json({
-                            total_warga_bekerja: resWarga[0].total,
-                            total_insentif: resInsentif[0].total,
-                            dampak_lingkungan: dampakLingkungan,
-                            tren_partisipasi: resTren,
-                            sebaran_program: resSebaran.map(s => ({ name: s.name || 'Lainnya', value: s.value })),
-                            rincian_capaian: resCapaian
+                            // Fill gaps for tren partisipasi for the last 6 months
+                            const months = [];
+                            for(let i=5; i>=0; i--) {
+                                const d = new Date();
+                                d.setMonth(d.getMonth() - i);
+                                const m = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0');
+                                months.push(m);
+                            }
+                            const trenFilled = months.map(m => {
+                                const found = resTren.find(t => t.bulan === m);
+                                return { bulan: m, partisipasi: found ? found.partisipasi : 0 };
+                            });
+
+                            res.json({
+                                total_warga_bekerja: resWarga[0].total,
+                                total_insentif: resInsentif[0].total,
+                                dampak_lingkungan: dampakLingkungan,
+                                tren_partisipasi: trenFilled,
+                                sebaran_program: resSebaran.map(s => ({ name: s.name || 'Lainnya', value: s.value })),
+                                rincian_capaian: resCapaian
+                            });
                         });
                     });
                 });
@@ -478,6 +495,154 @@ app.post('/api/inventaris/history', authenticateToken, (req, res) => {
         [inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+// --- 13. Produktivitas API ---
+app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
+    // Menghitung logbook yang mencapai progres 100% sebagai "pekerjaan selesai"
+    const query = `
+        SELECT DATE_FORMAT(created_at, '%Y-%m') as periode, COUNT(id) as jumlah_selesai
+        FROM logbooks
+        WHERE progres_persentase >= 100
+        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
+        ORDER BY periode ASC
+        LIMIT 12
+    `;
+    db.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// --- 14. Dashboard Admin Main ---
+app.get('/api/dashboard/main', authenticateToken, (req, res) => {
+    const data = {
+        profiling: { total: 0, petani: 0, pembersih: 0, pengrajin: 0 },
+        tugas: { total: 0, aktif: 0, terjadwal: 0, selesai: 0 },
+        dampak: [],
+        area: []
+    };
+
+    const qProfiling = 'SELECT kemampuan_utama, COUNT(*) as count FROM workers GROUP BY kemampuan_utama';
+    const qTugas = 'SELECT status, COUNT(*) as count FROM work_schedules GROUP BY status';
+    const qSelesai = 'SELECT COUNT(DISTINCT schedule_id) as count FROM logbooks WHERE progres_persentase >= 100';
+    const qDampak = 'SELECT nama_barang, kuantitas, satuan, kategori FROM inventaris ORDER BY kuantitas DESC LIMIT 3';
+    const qArea = 'SELECT id, nama_program as nama, lokasi, kordinat, status FROM micro_programs ORDER BY created_at DESC';
+
+    db.query(qProfiling, (err, rProf) => {
+        if (rProf) {
+            rProf.forEach(r => {
+                const k = (r.kemampuan_utama || '').toLowerCase();
+                data.profiling.total += r.count;
+                if (k.includes('tani') || k.includes('kebun') || k.includes('tanam')) data.profiling.petani += r.count;
+                else if (k.includes('bersih') || k.includes('sampah') || k.includes('sapu')) data.profiling.pembersih += r.count;
+                else if (k.includes('rajin') || k.includes('kriya') || k.includes('anyam')) data.profiling.pengrajin += r.count;
+            });
+        }
+        
+        db.query(qTugas, (err, rTugas) => {
+            if (rTugas) {
+                rTugas.forEach(r => {
+                    data.tugas.total += r.count;
+                    if (r.status === 'active' || r.status === 'in_progress') data.tugas.aktif += r.count;
+                    else if (r.status === 'scheduled') data.tugas.terjadwal += r.count;
+                });
+            }
+            
+            db.query(qSelesai, (err, rSelesai) => {
+                if (rSelesai && rSelesai.length > 0) {
+                    data.tugas.selesai = rSelesai[0].count;
+                }
+                
+                db.query(qDampak, (err, rDampak) => {
+                    if (rDampak) data.dampak = rDampak;
+                    
+                    db.query(qArea, (err, rArea) => {
+                        if (rArea) data.area = rArea;
+                        res.json(data);
+                    });
+                });
+            });
+        });
+    });
+});
+
+// --- 15. Search API ---
+app.get('/api/search', authenticateToken, (req, res) => {
+    const q = req.query.q || '';
+    if (!q) return res.json([]);
+    
+    const likeQ = `%${q}%`;
+    const results = [];
+    
+    // Search Workers
+    db.query('SELECT id, nama, kemampuan_utama FROM workers WHERE nama LIKE ? OR kemampuan_utama LIKE ? LIMIT 5', [likeQ, likeQ], (err, wRes) => {
+        if (wRes) wRes.forEach(w => results.push({ type: 'Pekerja', title: w.nama, desc: w.kemampuan_utama, link: '/admin/profiling' }));
+        
+        // Search Programs
+        db.query('SELECT id, nama_program, jenis_program FROM micro_programs WHERE nama_program LIKE ? OR jenis_program LIKE ? LIMIT 5', [likeQ, likeQ], (err, pRes) => {
+            if (pRes) pRes.forEach(p => results.push({ type: 'Program', title: p.nama_program, desc: p.jenis_program, link: '/admin/program' }));
+            
+            // Note: We can also add hardcoded route navigation suggestions in the frontend
+            res.json(results);
+        });
+    });
+});
+
+// --- 16. Notifications API ---
+app.get('/api/notifications', authenticateToken, (req, res) => {
+    db.query('SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 20', [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.put('/api/notifications/:id/read', authenticateToken, (req, res) => {
+    db.query('UPDATE notifications SET is_read = TRUE WHERE id = ? AND user_id = ?', [req.params.id, req.user.id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.post('/api/notifications', authenticateToken, (req, res) => {
+    const { user_id, judul, pesan, link_url } = req.body;
+    db.query('INSERT INTO notifications (user_id, judul, pesan, link_url) VALUES (?, ?, ?, ?)', [user_id, judul, pesan, link_url || null], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+// --- 17. Messages API ---
+app.get('/api/messages', authenticateToken, (req, res) => {
+    db.query(`
+        SELECT m.*, s.nama as sender_name, r.nama as receiver_name 
+        FROM messages m 
+        JOIN users s ON m.sender_id = s.id 
+        JOIN users r ON m.receiver_id = r.id 
+        WHERE m.sender_id = ? OR m.receiver_id = ? 
+        ORDER BY m.created_at DESC LIMIT 50
+    `, [req.user.id, req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/messages', authenticateToken, (req, res) => {
+    const { receiver_id, pesan } = req.body;
+    db.query('INSERT INTO messages (sender_id, receiver_id, pesan) VALUES (?, ?, ?)', [req.user.id, receiver_id, pesan], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        // Also create a notification for the receiver
+        const notifTitle = `Pesan baru dari ${req.user.nama}`;
+        db.query('INSERT INTO notifications (user_id, judul, pesan) VALUES (?, ?, ?)', [receiver_id, notifTitle, pesan.substring(0, 50)]);
+        res.json({ id: result.insertId, sender_id: req.user.id, receiver_id, pesan });
+    });
+});
+
+app.get('/api/users/list', authenticateToken, (req, res) => {
+    db.query('SELECT id, nama, role FROM users WHERE id != ?', [req.user.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
     });
 });
 
