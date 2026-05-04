@@ -639,6 +639,56 @@ app.post('/api/messages', authenticateToken, (req, res) => {
     });
 });
 
+app.get('/api/pengawas/monitoring', authenticateToken, (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    const pengawasId = req.user.id;
+
+    const data = {
+        stats: {
+            todaySchedules: 0,
+            pendingLogbooks: 0,
+            reportedProblems: 0
+        },
+        schedules: []
+    };
+
+    // 1. Get today's schedules with logbook info
+    const querySchedules = `
+        SELECT ws.id, ws.tanggal, ws.jam_mulai, ws.jam_selesai, ws.status as schedule_status, 
+               mp.nama_program, mp.lokasi,
+               l.id as logbook_id, l.progres_persentase
+        FROM work_schedules ws
+        JOIN micro_programs mp ON ws.program_id = mp.id
+        LEFT JOIN logbooks l ON ws.id = l.schedule_id
+        WHERE ws.tanggal = ?
+        ORDER BY ws.jam_mulai ASC
+    `;
+
+    // 2. Get reported problems today by this pengawas
+    const queryProblems = `
+        SELECT COUNT(*) as count 
+        FROM field_problems 
+        WHERE pengawas_id = ? AND tanggal = ?
+    `;
+
+    db.query(querySchedules, [today], (err, schedRows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        data.schedules = schedRows || [];
+        data.stats.todaySchedules = data.schedules.length;
+        
+        // Count pending logbooks (schedules without logbook entry)
+        data.stats.pendingLogbooks = data.schedules.filter(s => !s.logbook_id).length;
+
+        db.query(queryProblems, [pengawasId, today], (err, probRows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            data.stats.reportedProblems = probRows[0]?.count || 0;
+            res.json(data);
+        });
+    });
+});
+
 app.get('/api/users/list', authenticateToken, (req, res) => {
     db.query('SELECT id, nama, role FROM users WHERE id != ?', [req.user.id], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
