@@ -36,7 +36,7 @@ function initDb() {
             nama VARCHAR(255) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
-            role ENUM('admin', 'pengawas') NOT NULL,
+            role ENUM('admin', 'pengawas', 'supervisor', 'relawan') NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`,
 
@@ -57,7 +57,10 @@ function initDb() {
             jenis_kelamin VARCHAR(10),
             alamat TEXT,
             no_telepon VARCHAR(50),
+            kontak_darurat VARCHAR(255),
             status_keluarga VARCHAR(50),
+            status_rumah VARCHAR(50),
+            riwayat_penyakit TEXT,
             kemampuan_utama VARCHAR(255),
             household_id INT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -216,6 +219,19 @@ function initDb() {
         });
     };
     runQuery();
+
+    // Ensure existing tables have the new columns
+    const alterQueries = [
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS kontak_darurat VARCHAR(255) AFTER no_telepon",
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS status_keluarga VARCHAR(50) AFTER kontak_darurat",
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS status_rumah VARCHAR(50) AFTER status_keluarga",
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS riwayat_penyakit TEXT AFTER status_rumah"
+    ];
+    alterQueries.forEach(q => db.query(q, (err) => {
+        if (err && err.code !== 'ER_DUP_COLUMN_NAMES') {
+            // Ignore if column already exists
+        }
+    }));
 }
 
 function seedDefaults() {
