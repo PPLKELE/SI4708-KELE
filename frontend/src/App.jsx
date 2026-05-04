@@ -17,6 +17,7 @@ import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
 import PelaporanMasalah from './pages/PelaporanMasalah';
 import PerencanaanProgram from './pages/admin/PerencanaanProgram';
+import Produktivitas from './pages/admin/Produktivitas';
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
             <Route path="keluarga" element={<DataKeluarga />} />
             <Route path="program" element={<ProgramKerja />} />
             <Route path="roles" element={<UserManagement />} />
+            <Route path="produktivitas" element={<Produktivitas />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 

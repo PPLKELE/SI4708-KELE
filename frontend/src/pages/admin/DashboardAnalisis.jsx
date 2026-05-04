@@ -134,21 +134,32 @@ export default function DashboardAnalisis() {
           <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-main)' }}>Sebaran Dampak Program</h3>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
-              <PieChart>
-                <Pie
-                  data={data.sebaran_program}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={100}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {data.sebaran_program.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+                <PieChart>
+                  {data.sebaran_program && data.sebaran_program.length > 0 ? (
+                    <Pie
+                      data={data.sebaran_program}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {data.sebaran_program.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                  ) : (
+                    <Pie
+                      data={[{ name: 'Belum Ada Program', value: 1 }]}
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      fill="#e2e8f0"
+                      dataKey="value"
+                    />
+                  )}
                 <RechartsTooltip />
                 <Legend />
               </PieChart>
