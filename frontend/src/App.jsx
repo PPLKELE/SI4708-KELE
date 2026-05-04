@@ -9,6 +9,9 @@ import DashboardAnalisis from './pages/admin/DashboardAnalisis';
 import DataPekerja from './pages/admin/DataPekerja';
 import Edukasi from './pages/Edukasi';
 import Inventaris from './pages/admin/Inventaris';
+import UserManagement from './pages/admin/UserManagement';
+import DataKeluarga from './pages/admin/DataKeluarga';
+import ProgramKerja from './pages/admin/ProgramKerja';
 import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
@@ -32,7 +35,10 @@ function App() {
             <Route path="edukasi" element={<Edukasi />} />
             <Route path="inventaris" element={<Inventaris />} />
             <Route path="pengawas" element={<PelaporanMasalah />} />
-            <Route path="program" element={<PerencanaanProgram />} />
+            <Route path="perencanaan" element={<PerencanaanProgram />} />
+            <Route path="keluarga" element={<DataKeluarga />} />
+            <Route path="program" element={<ProgramKerja />} />
+            <Route path="roles" element={<UserManagement />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 

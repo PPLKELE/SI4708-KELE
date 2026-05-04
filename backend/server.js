@@ -85,10 +85,38 @@ app.get('/api/workers', authenticateToken, (req, res) => {
     });
 });
 
+app.get('/api/workers/:id', authenticateToken, (req, res) => {
+    const workerId = req.params.id;
+    // Get worker details
+    db.query(`SELECT w.*, h.kepala_keluarga, h.alamat as household_address 
+              FROM workers w 
+              LEFT JOIN households h ON w.household_id = h.id 
+              WHERE w.id = ?`, [workerId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (rows.length === 0) return res.status(404).json({ error: 'Pekerja tidak ditemukan' });
+        
+        const worker = rows[0];
+        
+        // Get assigned programs and schedules
+        const scheduleSql = `
+            SELECT ws.*, mp.nama_program, mp.jenis_program
+            FROM schedule_assignments sa
+            JOIN work_schedules ws ON sa.schedule_id = ws.id
+            JOIN micro_programs mp ON ws.program_id = mp.id
+            WHERE sa.worker_id = ?
+        `;
+        
+        db.query(scheduleSql, [workerId], (err2, schedules) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ ...worker, schedules });
+        });
+    });
+});
+
 app.post('/api/workers', authenticateToken, (req, res) => {
-    const { nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id } = req.body;
-    db.query(`INSERT INTO workers (nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id) VALUES (?,?,?,?,?,?,?,?)`,
-        [nama, tanggal_lahir || null, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id || null], function(err, result) {
+    const { nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, kontak_darurat, status_keluarga, status_rumah, riwayat_penyakit, kemampuan_utama, household_id } = req.body;
+    db.query(`INSERT INTO workers (nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, kontak_darurat, status_keluarga, status_rumah, riwayat_penyakit, kemampuan_utama, household_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+        [nama, tanggal_lahir || null, jenis_kelamin, alamat, no_telepon, kontak_darurat, status_keluarga, status_rumah, riwayat_penyakit, kemampuan_utama, household_id || null], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, ...req.body });
     });
@@ -437,6 +465,15 @@ app.get('/api/edukasi', authenticateToken, (req, res) => {
     });
 });
 
+// 8.1 User Management API
+app.get('/api/users', authenticateToken, (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+    db.query('SELECT id, nama, email, role, created_at FROM users', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
 app.post('/api/edukasi', authenticateToken, (req, res) => {
     const { judul, deskripsi, kategori, tipe_konten, url_konten } = req.body;
     db.query(`INSERT INTO edukasi_contents (judul, deskripsi, kategori, tipe_konten, url_konten) VALUES (?,?,?,?,?)`,
@@ -478,6 +515,16 @@ app.post('/api/inventaris/history', authenticateToken, (req, res) => {
         [inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+app.put('/api/users/:id/role', authenticateToken, (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
+    const { role } = req.body;
+    const userId = req.params.id;
+    db.query('UPDATE users SET role = ? WHERE id = ?', [role, userId], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Role updated successfully' });
     });
 });
 

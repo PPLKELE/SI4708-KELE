@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2, AlertTriangle, MapPin } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2, AlertTriangle, MapPin, Leaf, ShieldCheck } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, active }) => (
   <Link to={to} className={`nav-item ${active ? 'active' : ''}`}>
@@ -32,14 +32,18 @@ export const Layout = ({ requireRole }) => {
 
   const navItems = user.role === 'admin' 
     ? [
-        { icon: LayoutDashboard, label: 'Dashboard', to: '/admin/dashboard' },
-        { icon: MapPin, label: 'Perencanaan Program', to: '/admin/program' },
+        { icon: LayoutDashboard, label: 'Dashboard Admin', to: '/admin/dashboard' },
+        { icon: BarChart2, label: 'Dashboard Analisis', to: '/admin/analisis' },
+        { icon: Users, label: 'Data Pekerja', to: '/admin/pekerja' },
+        { icon: UserSquare, label: 'Keluarga Miskin', to: '/admin/keluarga' },
+        { icon: MapPin, label: 'Perencanaan Program', to: '/admin/perencanaan' },
+        { icon: Calendar, label: 'Program Mikro', to: '/admin/program' },
         { icon: PieChart, label: 'Profiling', to: '/admin/profiling' },
         { icon: DollarSign, label: 'Keuangan', to: '/admin/ekonomi' },
         { icon: Users, label: 'Pengawas', to: '/admin/pengawas' },
         { icon: BookOpen, label: 'Edukasi', to: '/admin/edukasi' },
         { icon: Package, label: 'Inventaris', to: '/admin/inventaris' },
-        { icon: BarChart2, label: 'Dashboard Analisis', to: '/admin/analisis' }
+        { icon: ShieldCheck, label: 'Pengaturan Akses', to: '/admin/roles' }
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
