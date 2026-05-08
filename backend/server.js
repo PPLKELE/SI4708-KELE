@@ -148,19 +148,19 @@ app.get('/api/programs', authenticateToken, (req, res) => {
 });
 
 app.post('/api/programs', authenticateToken, (req, res) => {
-    const { nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai } = req.body;
+    const { nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai, status } = req.body;
     // stakeholders is expected to be a JSON string or text from frontend
-    db.query(`INSERT INTO micro_programs (nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai) VALUES (?,?,?,?,?,?,?,?)`,
-        [nama_program, jenis_program, deskripsi, lokasi, kordinat || null, stakeholders, tanggal_mulai, tanggal_selesai], function(err, result) {
+    db.query(`INSERT INTO micro_programs (nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai, status) VALUES (?,?,?,?,?,?,?,?,?)`,
+        [nama_program, jenis_program, deskripsi, lokasi, kordinat || null, stakeholders, tanggal_mulai, tanggal_selesai, status || 'planned'], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, ...req.body });
     });
 });
 
 app.put('/api/programs/:id', authenticateToken, (req, res) => {
-    const { nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai } = req.body;
-    db.query(`UPDATE micro_programs SET nama_program=?, jenis_program=?, deskripsi=?, lokasi=?, kordinat=?, stakeholders=?, tanggal_mulai=?, tanggal_selesai=? WHERE id=?`,
-        [nama_program, jenis_program, deskripsi, lokasi, kordinat || null, stakeholders, tanggal_mulai, tanggal_selesai, req.params.id], function(err, result) {
+    const { nama_program, jenis_program, deskripsi, lokasi, kordinat, stakeholders, tanggal_mulai, tanggal_selesai, status } = req.body;
+    db.query(`UPDATE micro_programs SET nama_program=?, jenis_program=?, deskripsi=?, lokasi=?, kordinat=?, stakeholders=?, tanggal_mulai=?, tanggal_selesai=?, status=? WHERE id=?`,
+        [nama_program, jenis_program, deskripsi, lokasi, kordinat || null, stakeholders, tanggal_mulai, tanggal_selesai, status || 'planned', req.params.id], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: req.params.id, ...req.body });
     });
