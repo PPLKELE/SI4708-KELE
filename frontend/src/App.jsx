@@ -8,16 +8,18 @@ import AdminDashboard from './pages/admin/Dashboard';
 import DashboardAnalisis from './pages/admin/DashboardAnalisis';
 import DataPekerja from './pages/admin/DataPekerja';
 import Edukasi from './pages/Edukasi';
-import Inventaris from './pages/admin/Inventaris';
+
 import UserManagement from './pages/admin/UserManagement';
 import DataKeluarga from './pages/admin/DataKeluarga';
 import ProgramKerja from './pages/admin/ProgramKerja';
 import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
+import DistribusiHasil from './pages/pengawas/DistribusiHasil';
 import EkonomiInsentif from './pages/EkonomiInsentif';
 import PelaporanMasalah from './pages/PelaporanMasalah';
 import PerencanaanProgram from './pages/admin/PerencanaanProgram';
 import Produktivitas from './pages/admin/Produktivitas';
+import TrackingReducing from './pages/admin/TrackingReducing';
 
 function App() {
   return (
@@ -34,13 +36,14 @@ function App() {
             <Route path="pekerja" element={<DataPekerja />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
             <Route path="edukasi" element={<Edukasi />} />
-            <Route path="inventaris" element={<Inventaris />} />
+
             <Route path="pengawas" element={<PelaporanMasalah />} />
             <Route path="perencanaan" element={<PerencanaanProgram />} />
             <Route path="keluarga" element={<DataKeluarga />} />
             <Route path="program" element={<ProgramKerja />} />
             <Route path="roles" element={<UserManagement />} />
             <Route path="produktivitas" element={<Produktivitas />} />
+            <Route path="tracking-reducing" element={<TrackingReducing />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
@@ -48,6 +51,7 @@ function App() {
           <Route path="/pengawas" element={<Layout requireRole="pengawas" />}>
             <Route path="dashboard" element={<PengawasDashboard />} />
             <Route path="logbook" element={<Logbook />} />
+            <Route path="distribusi" element={<DistribusiHasil />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
             <Route path="pelaporan" element={<PelaporanMasalah />} />
             <Route index element={<Navigate to="/pengawas/dashboard" replace />} />

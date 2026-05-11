@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Package, Plus, Minus, Search, History, ArrowDownToLine, ArrowUpToLine, ShoppingCart } from 'lucide-react';
+import { Package, Plus, Minus, Search, History, ArrowDownToLine, ArrowUpToLine, ShoppingCart, Leaf } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-const Inventaris = () => {
+const TrackingReducing = () => {
     const { user } = useAuth();
     const [items, setItems] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddForm, setShowAddForm] = useState(false);
-    const [activeAction, setActiveAction] = useState(null); // { id, type: 'tambah' | 'kurang' | 'jual' | 'history' }
+    const [activeAction, setActiveAction] = useState(null);
     const [historyData, setHistoryData] = useState([]);
+    const [households, setHouseholds] = useState([]);
 
     const [formData, setFormData] = useState({
         nama_barang: '',
@@ -21,11 +22,13 @@ const Inventaris = () => {
         jumlah: '',
         keterangan: '',
         harga: '',
-        pembeli: ''
+        pembeli: '',
+        household_id: ''
     });
 
     useEffect(() => {
         fetchInventaris();
+        fetchHouseholds();
     }, []);
 
     const fetchInventaris = async () => {
@@ -34,9 +37,25 @@ const Inventaris = () => {
             const res = await fetch('http://localhost:4000/api/inventaris', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
-            if (res.ok) setItems(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                // Filter only Kompos and Kerajinan for Tracking & Reducing
+                setItems(data.filter(i => i.kategori === 'Kompos' || i.kategori === 'Kerajinan'));
+            }
         } catch (error) {
             console.error('Error fetching inventaris:', error);
+        }
+    };
+
+    const fetchHouseholds = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:4000/api/households', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) setHouseholds(await res.json());
+        } catch (error) {
+            console.error('Error fetching households:', error);
         }
     };
 
@@ -81,6 +100,11 @@ const Inventaris = () => {
             if (activeAction.type === 'jual') {
                 const formatter = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 });
                 finalKeterangan = `🛒 Penjualan kepada: ${adjustData.pembeli || 'Umum'} | Total: ${formatter.format(adjustData.harga || 0)} | Catatan: ${adjustData.keterangan || '-'}`;
+            } else if (activeAction.type === 'kurang' && adjustData.household_id) {
+                const targetKeluarga = households.find(h => h.id.toString() === adjustData.household_id);
+                if (targetKeluarga) {
+                    finalKeterangan = `🤝 Distribusi gratis kepada: Keluarga ${targetKeluarga.kepala_keluarga} (RT/RW ${targetKeluarga.rt_rw}) | Catatan: ${adjustData.keterangan || '-'}`;
+                }
             }
 
             const token = localStorage.getItem('token');
@@ -98,7 +122,7 @@ const Inventaris = () => {
             });
             if (res.ok) {
                 setActiveAction(null);
-                setAdjustData({ jumlah: '', keterangan: '', harga: '', pembeli: '' });
+                setAdjustData({ jumlah: '', keterangan: '', harga: '', pembeli: '', household_id: '' });
                 fetchInventaris();
             }
         } catch (error) {
@@ -107,12 +131,9 @@ const Inventaris = () => {
     };
 
     const getStockColorClass = (kategori) => {
-        if (kategori === 'Kompos') return '#10b981'; // green
-        if (kategori === 'Sayur') return '#3b82f6'; // blue
-        if (kategori === 'Kerajinan') return '#f59e0b'; // orange
-        if (kategori === 'Peralatan Tani') return '#8b5cf6'; // purple
-        if (kategori === 'Bibit & Benih') return '#ec4899'; // pink
-        return '#6b7280'; // gray
+        if (kategori === 'Kompos') return '#10b981';
+        if (kategori === 'Kerajinan') return '#f59e0b';
+        return '#6b7280';
     };
 
     const filteredItems = items.filter(i =>
@@ -121,16 +142,18 @@ const Inventaris = () => {
     );
 
     return (
-        <div style={{ padding: '2rem' }}>
+        <div style={{ padding: '2rem' }} className="animate-fade-in">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '0.5rem' }}>Manajemen Inventaris</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Lacak produk, tambah stok panen, & distribusi.</p>
+                    <h1 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Leaf className="text-primary" /> Tracking & Reducing
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)' }}>Fitur CRUD transaksional stok inventaris barang fisik (Kuantitas Kompos & Unit Kerajinan).</p>
                 </div>
                 {user && user.role === 'admin' && (
                     <button className="btn btn-primary" onClick={() => setShowAddForm(true)}>
                         <Plus size={18} />
-                        <span>Tambah Barang Baru</span>
+                        <span>Tambah Barang Fisik</span>
                     </button>
                 )}
             </div>
@@ -139,30 +162,25 @@ const Inventaris = () => {
             {showAddForm && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 99, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                     <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '500px' }}>
-                        <h3 style={{ marginBottom: '1.5rem', fontWeight: '600', fontSize: '1.25rem' }}>Tambah Barang Inventaris</h3>
+                        <h3 style={{ marginBottom: '1.5rem', fontWeight: '600', fontSize: '1.25rem' }}>Tambah Barang Fisik (Hasil Olahan)</h3>
                         <form onSubmit={handleAddItem} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Nama Barang</label>
-                                <input type="text" className="search-input" style={{ width: '100%' }} value={formData.nama_barang} onChange={e => setFormData({ ...formData, nama_barang: e.target.value })} required placeholder="Cth: Hasil Panen Pakcoy" />
+                                <input type="text" className="search-input" style={{ width: '100%' }} value={formData.nama_barang} onChange={e => setFormData({ ...formData, nama_barang: e.target.value })} required placeholder="Cth: Kompos Organik Premium" />
                             </div>
                             <div style={{ display: 'flex', gap: '1rem' }}>
                                 <div style={{ flex: 1 }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Kategori</label>
-                                    <select className="search-input" style={{ width: '100%' }} value={formData.kategori} onChange={e => setFormData({ ...formData, kategori: e.target.value })}>
+                                    <select className="search-input" style={{ width: '100%' }} value={formData.kategori} onChange={e => setFormData({ ...formData, kategori: e.target.value, satuan: e.target.value === 'Kompos' ? 'Kg' : 'Unit' })}>
                                         <option value="Kompos">Kompos</option>
-                                        <option value="Sayur">Sayur</option>
                                         <option value="Kerajinan">Kerajinan</option>
-                                        <option value="Peralatan Tani">Peralatan Tani</option>
-                                        <option value="Bibit & Benih">Bibit & Benih</option>
                                     </select>
                                 </div>
                                 <div style={{ flex: 1 }}>
                                     <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Satuan</label>
                                     <select className="search-input" style={{ width: '100%' }} value={formData.satuan} onChange={e => setFormData({ ...formData, satuan: e.target.value })}>
                                         <option value="Kg">Kilogram (Kg)</option>
-                                        <option value="Ikat">Ikat</option>
-                                        <option value="Unit">Unit</option>
-                                        <option value="Liter">Liter (L)</option>
+                                        <option value="Unit">Unit (Pcs)</option>
                                         <option value="Karung">Karung / Sak</option>
                                     </select>
                                 </div>
@@ -188,13 +206,25 @@ const Inventaris = () => {
                             {activeAction.type === 'tambah' && <ArrowDownToLine />}
                             {activeAction.type === 'kurang' && <ArrowUpToLine />}
                             {activeAction.type === 'jual' && <ShoppingCart />}
-                            {activeAction.type === 'tambah' ? 'Tambah Stok Masuk' : (activeAction.type === 'jual' ? 'Penjualan Barang' : 'Distribusi Gratis (Keluar)')}
+                            {activeAction.type === 'tambah' ? 'Pencatatan Stok Masuk' : (activeAction.type === 'jual' ? 'Penjualan Barang' : 'Distribusi / Penggunaan')}
                         </h3>
                         <form onSubmit={handleAdjustStock} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Jumlah ({items.find(i => i.id === activeAction.id)?.satuan})</label>
                                 <input type="number" step="0.1" min="0.1" className="search-input" style={{ width: '100%' }} value={adjustData.jumlah} onChange={e => setAdjustData({ ...adjustData, jumlah: e.target.value })} required placeholder="Cth: 5" />
                             </div>
+
+                            {activeAction.type === 'kurang' && (
+                                <div>
+                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Penerima Distribusi (Keluarga Miskin)</label>
+                                    <select className="search-input" style={{ width: '100%' }} value={adjustData.household_id} onChange={e => setAdjustData({ ...adjustData, household_id: e.target.value })}>
+                                        <option value="">-- Pilih Keluarga / Lainnya --</option>
+                                        {households.map(h => (
+                                            <option key={h.id} value={h.id}>Keluarga {h.kepala_keluarga} (RT/RW {h.rt_rw})</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
                             {activeAction.type === 'jual' && (
                                 <div style={{ display: 'flex', gap: '1rem' }}>
@@ -211,10 +241,10 @@ const Inventaris = () => {
 
                             <div>
                                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Catatan / Keterangan</label>
-                                <textarea className="search-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={adjustData.keterangan} onChange={e => setAdjustData({ ...adjustData, keterangan: e.target.value })} placeholder={activeAction.type === 'kurang' ? 'Dibagikan ke warga RT 01...' : (activeAction.type === 'jual' ? 'Dijual eceran ke pasar...' : 'Hasil panen minggu ke-2...')} required={activeAction.type !== 'jual'} />
+                                <textarea className="search-input" style={{ width: '100%', minHeight: '80px', resize: 'vertical' }} value={adjustData.keterangan} onChange={e => setAdjustData({ ...adjustData, keterangan: e.target.value })} placeholder={activeAction.type === 'kurang' ? 'Dibagikan ke warga...' : (activeAction.type === 'jual' ? 'Dijual eceran ke pasar...' : 'Produksi kompos minggu ini...')} required={activeAction.type !== 'jual'} />
                             </div>
                             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                                <button type="button" className="btn btn-outline" onClick={() => { setActiveAction(null); setAdjustData({ jumlah: '', keterangan: '', pembeli: '', harga: '' }); }}>Batal</button>
+                                <button type="button" className="btn btn-outline" onClick={() => { setActiveAction(null); setAdjustData({ jumlah: '', keterangan: '', pembeli: '', harga: '', household_id: '' }); }}>Batal</button>
                                 <button type="submit" className="btn" style={{ background: activeAction.type === 'tambah' ? '#10b981' : (activeAction.type === 'jual' ? '#f59e0b' : '#ef4444'), color: 'white', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     {activeAction.type === 'jual' && <ShoppingCart size={16} />}
                                     Konfirmasi {activeAction.type === 'tambah' ? 'Masuk' : (activeAction.type === 'jual' ? 'Penjualan' : 'Keluar')}
@@ -231,7 +261,7 @@ const Inventaris = () => {
                     <div style={{ background: 'white', padding: '0', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
                         <div style={{ padding: '1.5rem', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <History className="text-primary" /> Riwayat Transaksi Stok: {items.find(i => i.id === activeAction.id)?.nama_barang}
+                                <History className="text-primary" /> Riwayat Transaksi: {items.find(i => i.id === activeAction.id)?.nama_barang}
                             </h3>
                             <button onClick={() => setActiveAction(null)} style={{ background: 'none', border: 'none', fontSize: '1.5rem', cursor: 'pointer' }}>&times;</button>
                         </div>
@@ -248,7 +278,7 @@ const Inventaris = () => {
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                                     <strong style={{ color: h.tipe_perubahan === 'tambah' ? '#047857' : '#b91c1c' }}>
-                                                        {h.tipe_perubahan === 'tambah' ? 'Stok Masuk' : 'Distribusi Keluar'}
+                                                        {h.tipe_perubahan === 'tambah' ? 'Produksi / Masuk' : 'Distribusi / Keluar'}
                                                     </strong>
                                                     <span style={{ fontSize: '0.8rem', color: '#666' }}>{new Date(h.created_at).toLocaleString('id-ID')}</span>
                                                 </div>
@@ -269,17 +299,17 @@ const Inventaris = () => {
 
             <div className="search-container" style={{ maxWidth: '400px', marginBottom: '2rem' }}>
                 <Search className="search-icon" size={18} />
-                <input type="text" className="search-input" placeholder="Cari nama barang atau kategori..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                <input type="text" className="search-input" placeholder="Cari nama kompos atau kerajinan..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
 
             <div style={{ background: 'white', borderRadius: '12px', border: '1px solid #e1e4e8', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr style={{ background: '#f8f9fa', borderBottom: '1px solid #e1e4e8', textAlign: 'left' }}>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Barang</th>
+                            <th style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Barang Fisik</th>
                             <th style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Kategori</th>
                             <th style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>Sisa Stok</th>
-                            <th style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'right' }}>Aksi</th>
+                            <th style={{ padding: '1rem', fontSize: '0.875rem', color: 'var(--text-muted)', textAlign: 'right' }}>Aksi Transaksional</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -307,11 +337,11 @@ const Inventaris = () => {
                                 <td style={{ padding: '1rem', textAlign: 'right' }}>
                                     <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                                         {user && user.role === 'admin' && (
-                                            <button className="btn btn-outline" style={{ padding: '0.4rem 0.5rem', color: '#10b981', borderColor: '#10b981' }} onClick={() => setActiveAction({ id: item.id, type: 'tambah' })} title="Tambah Stok (Panen/Masuk)">
+                                            <button className="btn btn-outline" style={{ padding: '0.4rem 0.5rem', color: '#10b981', borderColor: '#10b981' }} onClick={() => setActiveAction({ id: item.id, type: 'tambah' })} title="Catat Produksi Masuk">
                                                 <Plus size={16} />
                                             </button>
                                         )}
-                                        <button className="btn btn-outline" style={{ padding: '0.4rem 0.5rem', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => setActiveAction({ id: item.id, type: 'kurang' })} title="Distribusi Keluar / Penggunaan">
+                                        <button className="btn btn-outline" style={{ padding: '0.4rem 0.5rem', color: '#ef4444', borderColor: '#ef4444' }} onClick={() => setActiveAction({ id: item.id, type: 'kurang' })} title="Distribusi / Penggunaan">
                                             <Minus size={16} />
                                         </button>
                                         {user && user.role === 'admin' && (
@@ -331,7 +361,7 @@ const Inventaris = () => {
                             <tr>
                                 <td colSpan="4" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
                                     <Package size={48} style={{ color: '#d9d9d9', margin: '0 auto 1rem' }} />
-                                    Belum ada barang di inventaris
+                                    Belum ada data Kompos atau Kerajinan yang dicatat.
                                 </td>
                             </tr>
                         )}
@@ -342,4 +372,4 @@ const Inventaris = () => {
     );
 };
 
-export default Inventaris;
+export default TrackingReducing;

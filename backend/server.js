@@ -542,6 +542,24 @@ app.put('/api/inventaris/:id', authenticateToken, (req, res) => {
     });
 });
 
+app.post('/api/inventaris/:id/adjust', authenticateToken, (req, res) => {
+    const inventarisId = req.params.id;
+    const { jumlah, tipe, keterangan } = req.body;
+    
+    // First, update the quantity in inventaris table
+    const sign = tipe === 'tambah' ? '+' : '-';
+    db.query(`UPDATE inventaris SET kuantitas = kuantitas ${sign} ? WHERE id = ?`, [parseFloat(jumlah), inventarisId], function(err, updateResult) {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Then log the transaction history
+        db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
+            [inventarisId, parseFloat(jumlah), tipe, keterangan], function(err, historyResult) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Stock adjusted successfully' });
+        });
+    });
+});
+
 app.post('/api/inventaris/history', authenticateToken, (req, res) => {
     const { inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan } = req.body;
     db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
@@ -756,6 +774,30 @@ app.get('/api/users/list', authenticateToken, (req, res) => {
     db.query('SELECT id, nama, role FROM users WHERE id != ?', [req.user.id], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+// --- 18. Tracking & Reducing API ---
+app.get('/api/tracking-reducing', authenticateToken, (req, res) => {
+    db.query(`SELECT * FROM environmental_tracking ORDER BY tanggal DESC`, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/tracking-reducing', authenticateToken, (req, res) => {
+    const { tanggal, jenis_limbah, volume_kg, estimasi_emisi_berkurang_kg } = req.body;
+    db.query(`INSERT INTO environmental_tracking (tanggal, jenis_limbah, volume_kg, estimasi_emisi_berkurang_kg) VALUES (?,?,?,?)`,
+        [tanggal, jenis_limbah, volume_kg, estimasi_emisi_berkurang_kg], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+app.delete('/api/tracking-reducing/:id', authenticateToken, (req, res) => {
+    db.query(`DELETE FROM environmental_tracking WHERE id=?`, [req.params.id], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Record deleted successfully' });
     });
 });
 
