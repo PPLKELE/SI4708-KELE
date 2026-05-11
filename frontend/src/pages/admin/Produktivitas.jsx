@@ -25,43 +25,18 @@ const Produktivitas = () => {
       if (!res.ok) throw new Error('Gagal mengambil data tren produktivitas');
       const result = await res.json();
       
-      // Format data with gap filling for the last 6 months minimum
-      const dataMap = {};
-      result.forEach(item => {
-        dataMap[item.periode] = item.jumlah_selesai;
-      });
-
-      const today = new Date();
-      let startYear = today.getFullYear();
-      let startMonth = today.getMonth() - 5; // 6 months ago (including current)
-      
-      if (result.length > 0) {
-        const earliest = result[0].periode;
-        const [eYear, eMonth] = earliest.split('-');
-        const earliestDate = new Date(parseInt(eYear), parseInt(eMonth) - 1);
-        const cutoffDate = new Date(today.getFullYear(), today.getMonth() - 5, 1);
-        if (earliestDate < cutoffDate) {
-          startYear = earliestDate.getFullYear();
-          startMonth = earliestDate.getMonth();
-        }
-      }
-
-      const currentDate = new Date(startYear, startMonth, 1);
-      const finalData = [];
-      
-      while (currentDate <= today) {
-        const y = currentDate.getFullYear();
-        const m = String(currentDate.getMonth() + 1).padStart(2, '0');
-        const key = `${y}-${m}`;
-        const monthName = currentDate.toLocaleString('id-ID', { month: 'short' });
+      const finalData = result.map(item => {
+        const [y, m] = item.periode.split('-');
+        const date = new Date(parseInt(y), parseInt(m) - 1);
+        const monthName = date.toLocaleString('id-ID', { month: 'short' });
         
-        finalData.push({
+        return {
           name: `${monthName} ${y}`,
-          PekerjaanSelesai: dataMap[key] || 0
-        });
-        
-        currentDate.setMonth(currentDate.getMonth() + 1);
-      }
+          PekerjaanRencana: item.rencana,
+          PekerjaanBerjalan: item.berjalan,
+          PekerjaanSelesai: item.selesai
+        };
+      });
       
       setData(finalData);
     } catch (err) {
@@ -171,12 +146,27 @@ const Produktivitas = () => {
               <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="name" tick={{fill: '#6b7280'}} tickLine={false} axisLine={{stroke: '#e5e7eb'}} />
-                <YAxis tick={{fill: '#6b7280'}} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, dataMax => (dataMax < 5 ? 5 : Math.ceil(dataMax * 1.2))]} tick={{fill: '#6b7280'}} tickLine={false} axisLine={false} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                 />
                 <Legend iconType="circle" />
+                <Line 
+                  type="monotone" 
+                  dataKey="PekerjaanRencana" 
+                  name="Jumlah Pekerjaan Rencana" 
+                  stroke="#94a3b8" 
+                  strokeWidth={2}
+                  strokeDasharray="5 5"
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="PekerjaanBerjalan" 
+                  name="Jumlah Pekerjaan Berjalan" 
+                  stroke="#fbbf24" 
+                  strokeWidth={2}
+                />
                 <Line 
                   type="monotone" 
                   dataKey="PekerjaanSelesai" 
@@ -203,12 +193,24 @@ const Produktivitas = () => {
               <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="name" tick={{fill: '#6b7280'}} tickLine={false} axisLine={{stroke: '#e5e7eb'}} />
-                <YAxis tick={{fill: '#6b7280'}} tickLine={false} axisLine={false} />
+                <YAxis domain={[0, dataMax => (dataMax < 5 ? 5 : Math.ceil(dataMax * 1.2))]} tick={{fill: '#6b7280'}} tickLine={false} axisLine={false} />
                 <Tooltip 
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                 />
                 <Legend iconType="circle" />
+                <Bar 
+                  dataKey="PekerjaanRencana" 
+                  name="Jumlah Pekerjaan Rencana" 
+                  fill="#cbd5e1" 
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar 
+                  dataKey="PekerjaanBerjalan" 
+                  name="Jumlah Pekerjaan Berjalan" 
+                  fill="#fbbf24" 
+                  radius={[4, 4, 0, 0]}
+                />
                 <Bar 
                   dataKey="PekerjaanSelesai" 
                   name="Jumlah Pekerjaan Selesai" 
