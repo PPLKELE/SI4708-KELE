@@ -1,17 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Check, Clock } from 'lucide-react';
+import { Camera, Check, Clock, X, Plus } from 'lucide-react';
+
 const Logbook = () => {
   const [schedules, setSchedules] = useState([]);
+  const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Form State
   const [selectedSchedule, setSelectedSchedule] = useState(null);
   const [progres, setProgres] = useState(0);
   const [catatan, setCatatan] = useState('');
+  const [lokasiPekerjaan, setLokasiPekerjaan] = useState('');
+  const [selectedWorkerId, setSelectedWorkerId] = useState('');
+  const [selectedWorkers, setSelectedWorkers] = useState([]);
+  const [foto, setFoto] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     fetchSchedules();
+    fetchWorkers();
   }, []);
 
   const fetchSchedules = async () => {
@@ -29,27 +37,66 @@ const Logbook = () => {
     }
   };
 
+  const fetchWorkers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:4000/api/workers', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      setWorkers(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const addWorker = () => {
+    if (!selectedWorkerId) return;
+    if (selectedWorkers.length >= 10) return alert('Maksimal 10 pekerja.');
+    if (selectedWorkers.find(w => w.id == selectedWorkerId)) return alert('Pekerja sudah ditambahkan.');
+    
+    const worker = workers.find(w => w.id == selectedWorkerId);
+    if (worker) {
+      setSelectedWorkers([...selectedWorkers, { id: worker.id, nama: worker.nama }]);
+      setSelectedWorkerId('');
+    }
+  };
+
+  const removeWorker = (id) => {
+    setSelectedWorkers(selectedWorkers.filter(w => w.id !== id));
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!selectedSchedule) return;
+    if (selectedWorkers.length < 1 || selectedWorkers.length > 10) {
+      return alert('Pekerja yang divalidasi harus minimal 1 dan maksimal 10 orang.');
+    }
+    if (!lokasiPekerjaan.trim()) {
+      return alert('Lokasi pekerjaan harus diisi.');
+    }
+    if (!foto) {
+      return alert('Bukti foto kerja harus diunggah.');
+    }
+    
     setIsSubmitting(true);
     
     try {
       const token = localStorage.getItem('token');
-      const payload = {
-        schedule_id: selectedSchedule.id,
-        progres_persentase: progres,
-        catatan: catatan,
-        foto_bukti_url: 'https://placeholder.com/uploaded-evidence.jpg' // Simulated URL
-      };
+      const formData = new FormData();
+      formData.append('schedule_id', selectedSchedule.id);
+      formData.append('progres_persentase', progres);
+      formData.append('catatan', catatan);
+      formData.append('lokasi_pekerjaan', lokasiPekerjaan);
+      formData.append('pekerja_terlibat', JSON.stringify(selectedWorkers));
+      formData.append('foto', foto);
 
       const res = await fetch('http://localhost:4000/api/logbooks', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify(payload)
+        body: formData
       });
       
       if (res.ok) {
@@ -57,9 +104,17 @@ const Logbook = () => {
         setSelectedSchedule(null);
         setProgres(0);
         setCatatan('');
+        setLokasiPekerjaan('');
+        setSelectedWorkers([]);
+        setFoto(null);
+        setPreviewUrl(null);
+      } else {
+        const errData = await res.json();
+        alert('Gagal menyimpan: ' + (errData.error || 'Terjadi kesalahan'));
       }
     } catch (error) {
       console.error(error);
+      alert('Terjadi kesalahan koneksi saat menyimpan.');
     } finally {
       setIsSubmitting(false);
     }
@@ -122,6 +177,54 @@ const Logbook = () => {
               </p>
 
               <div className="form-group">
+                <label className="form-label">Lokasi Pekerjaan (Aktual)</label>
+                <input 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Contoh: Jalan Mawar Barat RT 02..."
+                  value={lokasiPekerjaan}
+                  onChange={e => setLokasiPekerjaan(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Validasi Pekerja Hadir ({selectedWorkers.length}/10)</label>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                  <select 
+                    className="form-input" 
+                    value={selectedWorkerId}
+                    onChange={e => setSelectedWorkerId(e.target.value)}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="">-- Pilih Pekerja --</option>
+                    {workers.map(w => (
+                      <option key={w.id} value={w.id}>[ID: {w.id}] {w.nama}</option>
+                    ))}
+                  </select>
+                  <button type="button" className="btn btn-outline" onClick={addWorker} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.5rem 1rem' }}>
+                    <Plus size={16} /> Tambah
+                  </button>
+                </div>
+                
+                {selectedWorkers.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '1rem' }}>
+                    {selectedWorkers.map(w => (
+                      <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--background)', padding: '0.4rem 0.75rem', borderRadius: '1rem', fontSize: '0.85rem', border: '1px solid var(--border)' }}>
+                        <span>{w.nama} <span style={{ opacity: 0.6 }}>(ID: {w.id})</span></span>
+                        <button type="button" onClick={() => removeWorker(w.id)} style={{ background: 'none', border: 'none', color: 'var(--error)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 0 }}>
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {selectedWorkers.length === 0 && (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--error)', marginTop: '0.25rem' }}>Minimal harus menambahkan 1 pekerja yang hadir.</p>
+                )}
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Progres Penyelesaian (%)</label>
                 <input 
                   type="range" 
@@ -148,12 +251,31 @@ const Logbook = () => {
 
               <div className="form-group">
                 <label className="form-label">Unggah Foto Bukti Kerja (Evidence)</label>
-                <div style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '2rem', textAlign: 'center', background: 'var(--background)' }}>
-                  <Camera size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 1rem' }} />
-                  <p style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>Klik untuk mengambil foto atau unggah file</p>
-                  <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mendukung format JPG, PNG</p>
-                  <input type="file" style={{ display: 'none' }} id="fileUpload" />
-                  <label htmlFor="fileUpload" className="btn btn-outline" style={{ marginTop: '1rem', cursor: 'pointer' }}>Pilih File</label>
+                <div style={{ border: '2px dashed var(--border)', borderRadius: 'var(--radius-md)', padding: '2rem', textAlign: 'center', background: 'var(--background)', position: 'relative' }}>
+                  {!previewUrl ? (
+                    <>
+                      <Camera size={32} style={{ color: 'var(--text-muted)', margin: '0 auto 1rem' }} />
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>Klik untuk mengambil foto atau unggah file</p>
+                      <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mendukung format JPG, PNG</p>
+                    </>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: 'var(--radius-sm)', objectFit: 'contain' }} />
+                      <p style={{ fontSize: '0.85rem', marginTop: '1rem', color: 'var(--primary)', cursor: 'pointer' }}>Ubah Foto</p>
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/jpeg, image/png"
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer' }} 
+                    onChange={(e) => {
+                      const file = e.target.files[0];
+                      if (file) {
+                        setFoto(file);
+                        setPreviewUrl(URL.createObjectURL(file));
+                      }
+                    }} 
+                  />
                 </div>
               </div>
 

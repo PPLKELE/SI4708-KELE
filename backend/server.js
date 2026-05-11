@@ -4,10 +4,24 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('./database');
+const multer = require('multer');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Konfigurasi Multer
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, 'uploads/'));
+  },
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
 
 const JWT_SECRET = process.env.JWT_SECRET || 'work4village_secret_key_2026';
 
@@ -206,13 +220,15 @@ app.post('/api/schedules/:id/assign', authenticateToken, (req, res) => {
 });
 
 // 8. Logbook & Evidence API
-app.post('/api/logbooks', authenticateToken, (req, res) => {
-    const { schedule_id, progres_persentase, catatan, foto_bukti_url } = req.body;
+app.post('/api/logbooks', authenticateToken, upload.single('foto'), (req, res) => {
+    const { schedule_id, progres_persentase, catatan, lokasi_pekerjaan, pekerja_terlibat } = req.body;
     const pengawas_id = req.user.id;
-    db.query(`INSERT INTO logbooks (schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url) VALUES (?,?,?,?,?)`,
-        [schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url], function(err, result) {
+    const foto_bukti_url = req.file ? `/uploads/${req.file.filename}` : null;
+    
+    db.query(`INSERT INTO logbooks (schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url, lokasi_pekerjaan, pekerja_terlibat) VALUES (?,?,?,?,?,?,?)`,
+        [schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url, lokasi_pekerjaan || null, pekerja_terlibat || '[]'], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, ...req.body, pengawas_id });
+        res.json({ id: result.insertId, schedule_id, progres_persentase, catatan, foto_bukti_url, lokasi_pekerjaan, pekerja_terlibat, pengawas_id });
     });
 });
 
