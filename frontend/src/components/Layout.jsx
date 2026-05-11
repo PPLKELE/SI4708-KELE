@@ -46,13 +46,14 @@ export const Layout = ({ requireRole }) => {
         { icon: DollarSign, label: 'Keuangan', to: '/admin/ekonomi' },
         { icon: Users, label: 'Pengawas', to: '/admin/pengawas' },
         { icon: BookOpen, label: 'Edukasi', to: '/admin/edukasi' },
-        { icon: Package, label: 'Inventaris', to: '/admin/inventaris' },
         { icon: ShieldCheck, label: 'Pengaturan Akses', to: '/admin/roles' },
-        { icon: TrendingUp, label: 'Tren Produktivitas', to: '/admin/produktivitas' }
+        { icon: TrendingUp, label: 'Tren Produktivitas', to: '/admin/produktivitas' },
+        { icon: Leaf, label: 'Tracking & Reducing', to: '/admin/tracking-reducing' }
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
         { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' },
+        { icon: Send, label: 'Distribusi Hasil', to: '/pengawas/distribusi' },
         { icon: DollarSign, label: 'Insentif & Upah', to: '/pengawas/ekonomi' },
         { icon: AlertTriangle, label: 'Pelaporan Masalah', to: '/pengawas/pelaporan' }
       ];
