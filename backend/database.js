@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '' // Adjust if you have a password
+    password: 'Silvy.CK4' // Adjust if you have a password
 });
 
 // Connect, create DB, and switch to it
@@ -36,7 +36,7 @@ function initDb() {
             nama VARCHAR(255) NOT NULL,
             email VARCHAR(255) UNIQUE NOT NULL,
             password_hash VARCHAR(255) NOT NULL,
-            role ENUM('admin', 'pengawas') NOT NULL,
+            role ENUM('admin', 'pengawas', 'supervisor', 'relawan') NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`,
 
@@ -57,7 +57,10 @@ function initDb() {
             jenis_kelamin VARCHAR(10),
             alamat TEXT,
             no_telepon VARCHAR(50),
+            kontak_darurat VARCHAR(255),
             status_keluarga VARCHAR(50),
+            status_rumah VARCHAR(50),
+            riwayat_penyakit TEXT,
             kemampuan_utama VARCHAR(255),
             household_id INT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -69,6 +72,9 @@ function initDb() {
             nama_program VARCHAR(255) NOT NULL,
             jenis_program VARCHAR(100) NOT NULL,
             deskripsi TEXT,
+            lokasi VARCHAR(255),
+            kordinat VARCHAR(255),
+            stakeholders TEXT,
             tanggal_mulai DATE,
             tanggal_selesai DATE,
             status VARCHAR(50) DEFAULT 'planned',
@@ -102,6 +108,8 @@ function initDb() {
             progres_persentase INT DEFAULT 0,
             catatan TEXT,
             foto_bukti_url TEXT,
+            lokasi_pekerjaan VARCHAR(255),
+            pekerja_terlibat TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON DELETE CASCADE,
             FOREIGN KEY (pengawas_id) REFERENCES users(id) ON DELETE CASCADE
@@ -125,6 +133,70 @@ function initDb() {
             tanggal_pemberian DATE NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS edukasi_contents (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            judul VARCHAR(255) NOT NULL,
+            deskripsi TEXT NOT NULL,
+            kategori VARCHAR(100) NOT NULL,
+            tipe_konten VARCHAR(50) NOT NULL,
+            url_konten TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS inventaris (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            nama_barang VARCHAR(255) NOT NULL,
+            kategori VARCHAR(100) NOT NULL,
+            kuantitas DECIMAL(10,2) DEFAULT 0,
+            satuan VARCHAR(50) NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS inventaris_history (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            inventaris_id INT NOT NULL,
+            jumlah_perubahan DECIMAL(10,2) NOT NULL,
+            tipe_perubahan ENUM('tambah', 'kurang') NOT NULL,
+            keterangan TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (inventaris_id) REFERENCES inventaris(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS field_problems (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            pengawas_id INT NOT NULL,
+            tanggal DATE NOT NULL,
+            waktu TIME NOT NULL,
+            masalah TEXT NOT NULL,
+            tingkatan_masalah ENUM('low', 'mediate', 'high') NOT NULL,
+            lokasi_masalah VARCHAR(255) NOT NULL,
+            kordinat VARCHAR(255),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (pengawas_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS notifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            judul VARCHAR(255) NOT NULL,
+            pesan TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            link_url VARCHAR(255),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS messages (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            sender_id INT NOT NULL,
+            receiver_id INT NOT NULL,
+            pesan TEXT NOT NULL,
+            is_read BOOLEAN DEFAULT FALSE,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
         )`
     ];
 
@@ -132,7 +204,14 @@ function initDb() {
     let currentQuery = 0;
     const runQuery = () => {
         if (currentQuery >= tables.length) {
-            seedDefaults();
+            // Safely alter existing micro_programs table to add new columns (ignore error if column already exists)
+            db.query("ALTER TABLE micro_programs ADD COLUMN lokasi VARCHAR(255)", () => {
+                db.query("ALTER TABLE micro_programs ADD COLUMN kordinat VARCHAR(255)", () => {
+                    db.query("ALTER TABLE micro_programs ADD COLUMN stakeholders TEXT", () => {
+                        seedDefaults();
+                    });
+                });
+            });
             return;
         }
         db.query(tables[currentQuery], (err) => {
@@ -142,6 +221,21 @@ function initDb() {
         });
     };
     runQuery();
+
+    // Ensure existing tables have the new columns
+    const alterQueries = [
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS kontak_darurat VARCHAR(255) AFTER no_telepon",
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS status_keluarga VARCHAR(50) AFTER kontak_darurat",
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS status_rumah VARCHAR(50) AFTER status_keluarga",
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS riwayat_penyakit TEXT AFTER status_rumah",
+        "ALTER TABLE logbooks ADD COLUMN IF NOT EXISTS lokasi_pekerjaan VARCHAR(255) AFTER foto_bukti_url",
+        "ALTER TABLE logbooks ADD COLUMN IF NOT EXISTS pekerja_terlibat TEXT AFTER lokasi_pekerjaan"
+    ];
+    alterQueries.forEach(q => db.query(q, (err) => {
+        if (err && err.code !== 'ER_DUP_COLUMN_NAMES') {
+            // Ignore if column already exists
+        }
+    }));
 }
 
 function seedDefaults() {
@@ -160,6 +254,44 @@ function seedDefaults() {
             const pengawasPassword = bcrypt.hashSync('pengawas123', 8);
             db.query("INSERT INTO users (nama, email, password_hash, role) VALUES (?, ?, ?, ?)",
                 ['Pengawas Lapangan', 'pengawas@village.com', pengawasPassword, 'pengawas']);
+        }
+    });
+
+    // Insert default edukasi contents
+    db.query("SELECT COUNT(*) as count FROM edukasi_contents", (err, results) => {
+        if (results && results[0].count === 0) {
+            const defaultContents = [
+                ['Cara Menanam Sayur Organik', 'Panduan dasar menanam sayuran organik di pekarangan rumah untuk kebutuhan sehari-hari.', 'Pertanian', 'Artikel', 'modal:menanam-sayur'],
+                ['Mengelola Sampah Organik Menjadi Kompos', 'Langkah-langkah mudah mengubah sisa makanan dan sampah organik menjadi pupuk kompos yang berguna.', 'Lingkungan', 'Video', 'https://www.youtube.com/watch?v=eBjriH59MLg'],
+                ['Membuat Kerajinan dari Barang Bekas', 'Ide kreatif mendaur ulang barang bekas menjadi kerajinan bernilai jual.', 'Keterampilan', 'Artikel', 'modal:kerajinan'],
+                ['Tips & Trik: Membuat Kompos Kualitas Tinggi', 'Panduan singkat dan praktis dalam membuat kompos dari limbah rumah tangga dengan rasio karbon nitrogen yang pas.', 'Lingkungan', 'Artikel', 'modal:tips-kompos'],
+                ['Tips & Trik: Menghemat Air Pertanian', 'Strategi cerdas mengelola penggunaan air untuk perkebunan dengan mulsa dan irigasi tetes.', 'Pertanian', 'Artikel', 'modal:tips-air'],
+                ['Tips & Trik: Keselamatan Kerja Lapangan', 'Modul panduan menjaga kesehatan dan keselamatan, pencegahan dehidrasi saat bekerja di lapangan.', 'Kesehatan', 'Artikel', 'modal:tips-kesehatan'],
+                ['Video: Cara Membuat Kompos Cair', 'Tutorial video langkah demi langkah membuat pupuk organik cair dari sampah dapur tangga rumah.', 'Lingkungan', 'Video', 'https://www.youtube.com/watch?v=F0OqNq8F4Xo'],
+                ['Video: Panduan Membuat Kompos Padat Bokashi', 'Metode efektif menggunakan EM4 untuk mempercepat pembuatan kompos bokashi siap pakai.', 'Lingkungan', 'Video', 'https://www.youtube.com/watch?v=R9K2S8B72f0'],
+                ['Video: Pembuatan Pupuk Kompos Daun Kering', 'Memanfaatkan limbah daun kering untuk pembuatan pupuk kompos dengan cara sederhana.', 'Pertanian', 'Video', 'https://www.youtube.com/watch?v=v2R8p6QzBqg']
+            ];
+            const sql = "INSERT INTO edukasi_contents (judul, deskripsi, kategori, tipe_konten, url_konten) VALUES ?";
+            db.query(sql, [defaultContents], (insertErr) => {
+                if (insertErr) console.error('Error seeding edukasi contents:', insertErr);
+                else console.log('Default edukasi contents seeded.');
+            });
+        }
+    });
+
+    // Insert default inventaris
+    db.query("SELECT COUNT(*) as count FROM inventaris", (err, results) => {
+        if (results && results[0].count === 0) {
+            const defaultInventaris = [
+                ['Pupuk Kompos Organik', 'Kompos', 50, 'Kg'],
+                ['Sayur Bayam', 'Sayur', 120, 'Ikat'],
+                ['Tas Rajut Plastik', 'Kerajinan', 15, 'Unit']
+            ];
+            const sql = "INSERT INTO inventaris (nama_barang, kategori, kuantitas, satuan) VALUES ?";
+            db.query(sql, [defaultInventaris], (insertErr) => {
+                if (insertErr) console.error('Error seeding inventaris:', insertErr);
+                else console.log('Default inventaris seeded.');
+            });
         }
     });
 }
