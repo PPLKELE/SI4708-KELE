@@ -1,15 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Navigate, Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, UserSquare, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2, AlertTriangle, MapPin, Leaf, ShieldCheck, TrendingUp, UserCircle, Send, Check } from 'lucide-react';
+import { LayoutDashboard, Users, UserSquare, Calendar, LogOut, Search, Bell, Mail, FileText, PieChart, DollarSign, BookOpen, Package, ChevronRight, BarChart2, AlertTriangle, MapPin, Leaf, ShieldCheck, TrendingUp, UserCircle, Send, Check, PanelLeft } from 'lucide-react';
 
-const SidebarItem = ({ icon: Icon, label, to, active }) => (
-  <Link to={to} className={`nav-item ${active ? 'active' : ''}`}>
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-      <Icon size={20} />
-      <span>{label}</span>
-    </div>
-    {active && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
+const SidebarItem = ({ icon: Icon, label, to, active, collapsed }) => (
+  <Link
+    to={to}
+    className={`nav-item ${active ? 'active' : ''}`}
+    title={collapsed ? label : ''}
+    style={{
+      justifyContent: collapsed ? 'center' : 'flex-start',
+      padding: collapsed ? '0.75rem' : '0.75rem 1rem',
+      gap: collapsed ? 0 : '0.75rem'
+    }}
+  >
+    <Icon size={20} style={{ flexShrink: 0 }} />
+    {!collapsed && <span style={{ whiteSpace: 'nowrap' }}>{label}</span>}
+    {active && !collapsed && <ChevronRight size={16} style={{ marginLeft: 'auto' }} />}
   </Link>
 );
 
@@ -17,6 +24,8 @@ export const Layout = ({ requireRole }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -153,10 +162,42 @@ export const Layout = ({ requireRole }) => {
 
   return (
     <div className="app-container">
-      <aside className="sidebar">
-        <div className="sidebar-logo">
-          <div style={{ background: 'var(--primary)', color: 'white', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem' }}>W</div>
-          <span style={{ color: 'var(--text-main)' }}>Work4Village</span>
+      <aside className="sidebar" style={{
+        width: sidebarOpen ? '260px' : '68px',
+        minWidth: sidebarOpen ? '260px' : '68px',
+        padding: sidebarOpen ? '1.25rem' : '1rem 0.5rem',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        overflow: 'hidden',
+        flexShrink: 0
+      }}>
+        {/* Logo + Toggle button */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--primary)', color: 'white', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.2rem', flexShrink: 0 }}>W</div>
+            {sidebarOpen && <span style={{ color: 'var(--text-main)', whiteSpace: 'nowrap', fontWeight: 700, fontSize: '1.1rem' }}>Work4Village</span>}
+          </div>
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            title={sidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar'}
+            style={{
+              background: 'var(--background)',
+              border: 'none',
+              borderRadius: '8px',
+              width: '28px',
+              height: '28px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+              color: 'var(--text-muted)',
+              transition: 'background 0.2s'
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--border)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--background)'}
+          >
+            <ChevronRight size={16} style={{ transform: sidebarOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
+          </button>
         </div>
 
         <nav className="sidebar-nav">
@@ -167,24 +208,31 @@ export const Layout = ({ requireRole }) => {
               label={item.label} 
               to={item.to} 
               active={location.pathname === item.to}
+              collapsed={!sidebarOpen}
             />
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <button onClick={logout} className="nav-item" style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-            <LogOut size={20} />
-            <span>Keluar</span>
+          <button onClick={logout} className="nav-item" style={{ width: '100%', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', justifyContent: sidebarOpen ? 'flex-start' : 'center', padding: sidebarOpen ? '0.75rem 1rem' : '0.75rem 0', gap: '0.75rem' }} title={!sidebarOpen ? 'Keluar' : ''}>
+            <LogOut size={20} style={{ flexShrink: 0 }} />
+            {sidebarOpen && <span>Keluar</span>}
           </button>
         </div>
       </aside>
 
-      <main className="main-content" style={{ padding: 0, display: 'flex', flexDirection: 'column' }}>
+      <main className="main-content" style={{ padding: 0, display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         <header className="topbar">
           <div className="search-container" ref={searchRef} style={{ position: 'relative' }}>
             <Search className="search-icon" size={18} />
-            <input type="text" className="search-input" placeholder="Cari navigasi, pekerja, atau program..." value={searchQuery} onChange={handleSearch} onClick={() => { if (searchQuery.length > 2) setShowSearch(true); }} />
-            
+            <input
+              type="text"
+              className="search-input"
+              placeholder="Cari navigasi, pekerja, atau program..."
+              value={searchQuery}
+              onChange={handleSearch}
+              onClick={() => { if (searchQuery.length > 2) setShowSearch(true); }}
+            />
             {showSearch && searchResults.length > 0 && (
               <div style={{ position: 'absolute', top: '110%', left: 0, width: '100%', background: 'white', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', zIndex: 50, maxHeight: '300px', overflowY: 'auto' }}>
                 {searchResults.map((r, i) => (
@@ -203,7 +251,6 @@ export const Layout = ({ requireRole }) => {
           </div>
 
           <div className="topbar-actions">
-            
             <div ref={notifRef} style={{ position: 'relative' }}>
               <button className="icon-btn" onClick={() => { setShowNotif(!showNotif); fetchNotifications(); }}>
                 <Bell size={20} />
@@ -284,3 +331,4 @@ export const Layout = ({ requireRole }) => {
     </div>
   );
 };
+
