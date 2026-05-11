@@ -13,12 +13,31 @@ const seedMonitoringData = async () => {
         }
         const pengawasId = results[0].id;
 
-        // 2. Insert Micro Programs
-        const programs = [
-            ['Pembersihan Saluran Air Desa', 'Infrastruktur', 'Pembersihan got utama', 'Desa Sukamaju RT 01', 'active'],
-            ['Pembuatan Kompos Organik', 'Lingkungan', 'Pengolahan sampah', 'Bank Sampah RW 03', 'active'],
-            ['Perbaikan Jalan Setapak', 'Infrastruktur', 'Pengecoran jalan', 'Jalan Mawar RT 02', 'active']
+        // 1.5 Insert Workers (20 data)
+        const names = [
+            "Budi Santoso", "Siti Aminah", "Joko Susilo", "Andi Pratama", "Rina Melati", 
+            "Agus Setiawan", "Dewi Lestari", "Hendra Wijaya", "Sari Indah", "Eko Prasetyo", 
+            "Fitriani", "Dedi Saputra", "Yuniarti", "Rudi Haryanto", "Lina Herlina", 
+            "Bambang Suryono", "Nita Permatasari", "Iwan Kusuma", "Maya Anggraini", "Reza Rahardian"
         ];
+        const workersData = Array.from({ length: 20 }).map((_, i) => [
+            names[i], 
+            `199${Math.floor(Math.random() * 10)}-01-01`, 
+            i % 2 === 0 ? 'Laki-laki' : 'Perempuan', 
+            `Jalan Mawar RT 0${(i % 5) + 1}`, 
+            `0812345678${i.toString().padStart(2, '0')}`, 
+            i % 3 === 0 ? 'Pembersih' : 'Petani'
+        ]);
+
+        db.query("INSERT INTO workers (nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, kemampuan_utama) VALUES ?", [workersData], (err) => {
+            if (err) console.error("Error inserting workers:", err);
+
+            // 2. Insert Micro Programs
+            const programs = [
+                ['Pembersihan Saluran Air Desa', 'Infrastruktur', 'Pembersihan got utama', 'Desa Sukamaju RT 01', 'active'],
+                ['Pembuatan Kompos Organik', 'Lingkungan', 'Pengolahan sampah', 'Bank Sampah RW 03', 'active'],
+                ['Perbaikan Jalan Setapak', 'Infrastruktur', 'Pengecoran jalan', 'Jalan Mawar RT 02', 'active']
+            ];
         
         db.query("INSERT INTO micro_programs (nama_program, jenis_program, deskripsi, lokasi, status) VALUES ?", [programs], (err, progResult) => {
             if (err) throw err;
@@ -61,6 +80,7 @@ const seedMonitoringData = async () => {
                     });
                 });
             });
+        });
         });
     });
 };

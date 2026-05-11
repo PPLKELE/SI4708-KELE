@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '' // Adjust if you have a password
+    password: 'Silvy.CK4' // Adjust if you have a password
 });
 
 // Connect, create DB, and switch to it
@@ -108,6 +108,8 @@ function initDb() {
             progres_persentase INT DEFAULT 0,
             catatan TEXT,
             foto_bukti_url TEXT,
+            lokasi_pekerjaan VARCHAR(255),
+            pekerja_terlibat TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON DELETE CASCADE,
             FOREIGN KEY (pengawas_id) REFERENCES users(id) ON DELETE CASCADE
@@ -225,7 +227,9 @@ function initDb() {
         "ALTER TABLE workers ADD COLUMN IF NOT EXISTS kontak_darurat VARCHAR(255) AFTER no_telepon",
         "ALTER TABLE workers ADD COLUMN IF NOT EXISTS status_keluarga VARCHAR(50) AFTER kontak_darurat",
         "ALTER TABLE workers ADD COLUMN IF NOT EXISTS status_rumah VARCHAR(50) AFTER status_keluarga",
-        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS riwayat_penyakit TEXT AFTER status_rumah"
+        "ALTER TABLE workers ADD COLUMN IF NOT EXISTS riwayat_penyakit TEXT AFTER status_rumah",
+        "ALTER TABLE logbooks ADD COLUMN IF NOT EXISTS lokasi_pekerjaan VARCHAR(255) AFTER foto_bukti_url",
+        "ALTER TABLE logbooks ADD COLUMN IF NOT EXISTS pekerja_terlibat TEXT AFTER lokasi_pekerjaan"
     ];
     alterQueries.forEach(q => db.query(q, (err) => {
         if (err && err.code !== 'ER_DUP_COLUMN_NAMES') {
