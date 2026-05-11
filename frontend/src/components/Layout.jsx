@@ -43,7 +43,8 @@ export const Layout = ({ requireRole }) => {
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
         { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' },
-        { icon: DollarSign, label: 'Insentif & Upah', to: '/pengawas/ekonomi' }
+        { icon: DollarSign, label: 'Insentif & Upah', to: '/pengawas/ekonomi' },
+        { icon: Calendar, label: 'Jadwal Kerja', to: '/pengawas/jadwal' }
       ];
 
   return (

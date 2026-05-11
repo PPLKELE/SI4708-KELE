@@ -9,6 +9,7 @@ import DataPekerja from './pages/admin/DataPekerja';
 import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
 import EkonomiInsentif from './pages/EkonomiInsentif';
+import JadwalKerja from './pages/JadwalKerja';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="pekerja" element={<DataPekerja />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
+            <Route path="jadwal" element={<JadwalKerja />} />
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
@@ -31,6 +33,7 @@ function App() {
             <Route path="dashboard" element={<PengawasDashboard />} />
             <Route path="logbook" element={<Logbook />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
+            <Route path="jadwal" element={<JadwalKerja />} />
             <Route index element={<Navigate to="/pengawas/dashboard" replace />} />
           </Route>
 

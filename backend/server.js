@@ -15,9 +15,9 @@ const JWT_SECRET = process.env.JWT_SECRET || 'work4village_secret_key_2026';
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
-    
+
     if (!token) return res.sendStatus(401);
-    
+
     jwt.verify(token, JWT_SECRET, (err, user) => {
         if (err) return res.sendStatus(403);
         req.user = user;
@@ -30,11 +30,11 @@ app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     db.query(`SELECT * FROM users WHERE email = ?`, [email], (err, results) => {
         if (err || !results || results.length === 0) return res.status(401).json({ error: 'Invalid email or password' });
-        
+
         const user = results[0];
         const validPassword = bcrypt.compareSync(password, user.password_hash);
         if (!validPassword) return res.status(401).json({ error: 'Invalid email or password' });
-        
+
         const token = jwt.sign({ id: user.id, email: user.email, role: user.role, nama: user.nama }, JWT_SECRET, { expiresIn: '12h' });
         res.json({ token, user: { id: user.id, nama: user.nama, email: user.email, role: user.role } });
     });
@@ -55,10 +55,10 @@ app.post('/api/register', (req, res) => {
         const password_hash = bcrypt.hashSync(password, 8);
         db.query('INSERT INTO users (nama, email, password_hash, role) VALUES (?, ?, ?, ?)',
             [nama, email, password_hash, role], (insertErr, result) => {
-            if (insertErr) return res.status(500).json({ error: 'Gagal mendaftarkan pengguna' });
-            
-            res.status(201).json({ message: 'Registrasi berhasil', id: result.insertId });
-        });
+                if (insertErr) return res.status(500).json({ error: 'Gagal mendaftarkan pengguna' });
+
+                res.status(201).json({ message: 'Registrasi berhasil', id: result.insertId });
+            });
     });
 });
 
@@ -88,10 +88,10 @@ app.get('/api/workers', authenticateToken, (req, res) => {
 app.post('/api/workers', authenticateToken, (req, res) => {
     const { nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id } = req.body;
     db.query(`INSERT INTO workers (nama, tanggal_lahir, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id) VALUES (?,?,?,?,?,?,?,?)`,
-        [nama, tanggal_lahir || null, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id || null], function(err, result) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, ...req.body });
-    });
+        [nama, tanggal_lahir || null, jenis_kelamin, alamat, no_telepon, status_keluarga, kemampuan_utama, household_id || null], function (err, result) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, ...req.body });
+        });
 });
 
 // 4. Households API
@@ -105,10 +105,10 @@ app.get('/api/households', authenticateToken, (req, res) => {
 app.post('/api/households', authenticateToken, (req, res) => {
     const { kepala_keluarga, alamat, rt_rw, jumlah_anggota, pendapatan_per_bulan } = req.body;
     db.query(`INSERT INTO households (kepala_keluarga, alamat, rt_rw, jumlah_anggota, pendapatan_per_bulan) VALUES (?,?,?,?,?)`,
-        [kepala_keluarga, alamat, rt_rw, jumlah_anggota, pendapatan_per_bulan], function(err, result) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, ...req.body });
-    });
+        [kepala_keluarga, alamat, rt_rw, jumlah_anggota, pendapatan_per_bulan], function (err, result) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, ...req.body });
+        });
 });
 
 // 5. Micro Programs API
@@ -122,10 +122,10 @@ app.get('/api/programs', authenticateToken, (req, res) => {
 app.post('/api/programs', authenticateToken, (req, res) => {
     const { nama_program, jenis_program, deskripsi, tanggal_mulai, tanggal_selesai } = req.body;
     db.query(`INSERT INTO micro_programs (nama_program, jenis_program, deskripsi, tanggal_mulai, tanggal_selesai) VALUES (?,?,?,?,?)`,
-        [nama_program, jenis_program, deskripsi, tanggal_mulai, tanggal_selesai], function(err, result) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, ...req.body });
-    });
+        [nama_program, jenis_program, deskripsi, tanggal_mulai, tanggal_selesai], function (err, result) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, ...req.body });
+        });
 });
 
 // 6. Work Schedules API
@@ -143,10 +143,10 @@ app.get('/api/schedules', authenticateToken, (req, res) => {
 app.post('/api/schedules', authenticateToken, (req, res) => {
     const { program_id, tanggal, jam_mulai, jam_selesai, shift_label } = req.body;
     db.query(`INSERT INTO work_schedules (program_id, tanggal, jam_mulai, jam_selesai, shift_label) VALUES (?,?,?,?,?)`,
-        [program_id, tanggal, jam_mulai, jam_selesai, shift_label], function(err, result) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, ...req.body });
-    });
+        [program_id, tanggal, jam_mulai, jam_selesai, shift_label], function (err, result) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, ...req.body });
+        });
 });
 
 // 7. Schedule Assignments API (mengassign pekerja ke jadwal)
@@ -154,10 +154,10 @@ app.post('/api/schedules/:id/assign', authenticateToken, (req, res) => {
     const { worker_id } = req.body;
     const schedule_id = req.params.id;
     db.query(`INSERT INTO schedule_assignments (worker_id, schedule_id) VALUES (?,?)`,
-        [worker_id, schedule_id], function(err, result) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, worker_id, schedule_id });
-    });
+        [worker_id, schedule_id], function (err, result) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, worker_id, schedule_id });
+        });
 });
 
 // 8. Logbook & Evidence API
@@ -165,10 +165,10 @@ app.post('/api/logbooks', authenticateToken, (req, res) => {
     const { schedule_id, progres_persentase, catatan, foto_bukti_url } = req.body;
     const pengawas_id = req.user.id;
     db.query(`INSERT INTO logbooks (schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url) VALUES (?,?,?,?,?)`,
-        [schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url], function(err, result) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: result.insertId, ...req.body, pengawas_id });
-    });
+        [schedule_id, pengawas_id, progres_persentase, catatan, foto_bukti_url], function (err, result) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: result.insertId, ...req.body, pengawas_id });
+        });
 });
 
 // --- 9. Ekonomi & Insentif (SDG 1) ---
@@ -361,6 +361,16 @@ app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
             }
         );
     });
+});
+
+// --- Endpoint Khusus: Operasional & Penjadwalan ---
+app.get('/api/jadwal', (req, res) => {
+    const dataJadwal = [
+        { id: 1, hari: 'Senin', tugas: 'Pembersihan Fasilitas Umum', jam_mulai: '08:00', status: 'Selesai' },
+        { id: 2, hari: 'Selasa', tugas: 'Perbaikan Jalan Desa', jam_mulai: '09:00', status: 'Berjalan' },
+        { id: 3, hari: 'Rabu', tugas: 'Distribusi Pupuk', jam_mulai: '07:30', status: "Menunggu" }
+    ];
+    res.json(dataJadwal);
 });
 
 /* Simple Test API */
