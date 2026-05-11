@@ -426,18 +426,26 @@ app.get('/api/rewards/riwayat/:worker_id', authenticateToken, (req, res) => {
 
 // --- 10. Dashboard Analisis ---
 app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
+    const period = req.query.period || 'bulanan';
+    let groupFormat = '%Y-%m';
+    if (period === 'mingguan') groupFormat = '%Y-%m-%d';
+    else if (period === 'tahunan') groupFormat = '%Y';
+
     const queryTotalWarga = 'SELECT COUNT(id) as total FROM workers';
     const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
     const queryTren = `
-        SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(DISTINCT worker_id) as partisipasi 
-        FROM insentif 
-        GROUP BY DATE_FORMAT(tanggal, '%Y-%m') 
-        ORDER BY bulan ASC LIMIT 6
+        SELECT bulan, COUNT(DISTINCT worker_id) as partisipasi FROM (
+            SELECT DATE_FORMAT(created_at, '${groupFormat}') as bulan, id as worker_id FROM workers
+            UNION
+            SELECT DATE_FORMAT(tanggal, '${groupFormat}') as bulan, worker_id FROM insentif
+        ) as combined
+        GROUP BY bulan
+        ORDER BY bulan ASC
     `;
     const querySebaran = `
-        SELECT jenis_program as name, COUNT(*) as value 
+        SELECT TRIM(jenis_program) as name, COUNT(*) as value 
         FROM micro_programs 
-        GROUP BY jenis_program
+        GROUP BY TRIM(jenis_program)
     `;
     const queryCapaian = `
         SELECT id, nama_program, jenis_program, status, tanggal_mulai, tanggal_selesai 
@@ -461,17 +469,47 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
                             
                             const dampakLingkungan = { value: resDampak[0].total, unit: "Kg (Kompos/Sampah)" };
 
-                            // Fill gaps for tren partisipasi for the last 6 months
+                            // Dynamic Gap Filling
                             const months = [];
-                            for(let i=5; i>=0; i--) {
-                                const d = new Date();
-                                d.setMonth(d.getMonth() - i);
-                                const m = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2, '0');
-                                months.push(m);
+                            const now = new Date();
+                            const currentYear = now.getFullYear();
+
+                            if (period === 'mingguan') {
+                                // Show exactly 7 days of the CURRENT week (Sunday to Saturday)
+                                const day = now.getDay();
+                                const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+                                
+                                for(let i=0; i<7; i++) {
+                                    const d = new Date(sunday);
+                                    d.setDate(sunday.getDate() + i);
+                                    
+                                    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                                    const label = `${d.getDate()} ${d.toLocaleString('id-ID', {month:'short'})}`;
+                                    
+                                    months.push({ key, label });
+                                }
+                            } else if (period === 'tahunan') {
+                                // Last 5 years
+                                for(let i=4; i>=0; i--) {
+                                    const y = String(currentYear - i);
+                                    months.push({ key: y, label: y });
+                                }
+                            } else {
+                                // Monthly (Semester)
+                                const currentMonth = now.getMonth() + 1;
+                                const startMonth = currentMonth <= 6 ? 1 : 7;
+                                const endMonth = currentMonth <= 6 ? 6 : 12;
+                                for(let i=startMonth; i<=endMonth; i++) {
+                                    const m = `${currentYear}-${String(i).padStart(2, '0')}`;
+                                    const date = new Date(currentYear, i - 1, 1);
+                                    const label = date.toLocaleString('id-ID', { month: 'short' });
+                                    months.push({ key: m, label: label });
+                                }
                             }
+
                             const trenFilled = months.map(m => {
-                                const found = resTren.find(t => t.bulan === m);
-                                return { bulan: m, partisipasi: found ? found.partisipasi : 0 };
+                                const found = resTren.find(t => t.bulan === m.key);
+                                return { bulan: m.label, partisipasi: found ? found.partisipasi : 0 };
                             });
 
                             res.json({
@@ -581,18 +619,62 @@ app.put('/api/users/:id/role', authenticateToken, (req, res) => {
 
 // --- 13. Produktivitas API ---
 app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
-    // Menghitung logbook yang mencapai progres 100% sebagai "pekerjaan selesai"
-    const query = `
-        SELECT DATE_FORMAT(created_at, '%Y-%m') as periode, COUNT(id) as jumlah_selesai
-        FROM logbooks
-        WHERE progres_persentase >= 100
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-        ORDER BY periode ASC
-        LIMIT 12
+    const qRencana = `
+        SELECT DATE_FORMAT(tanggal_mulai, '%Y-%m') as periode, COUNT(*) as jumlah 
+        FROM micro_programs 
+        WHERE status = 'planned'
+        GROUP BY periode
     `;
-    db.query(query, (err, results) => {
+    const qBerjalan = `
+        SELECT DATE_FORMAT(tanggal_mulai, '%Y-%m') as periode, COUNT(*) as jumlah 
+        FROM micro_programs 
+        WHERE status IN ('scheduled', 'in_progress', 'active')
+        GROUP BY periode
+    `;
+    const qSelesai = `
+        SELECT periode, COUNT(*) as jumlah FROM (
+            SELECT DATE_FORMAT(tanggal_selesai, '%Y-%m') as periode FROM micro_programs WHERE status IN ('selesai', 'completed')
+            UNION ALL
+            SELECT DATE_FORMAT(created_at, '%Y-%m') as periode FROM logbooks WHERE progres_persentase >= 100
+        ) as combined
+        GROUP BY periode
+    `;
+
+    db.query(qRencana, (err, resRencana) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
+        db.query(qBerjalan, (err, resBerjalan) => {
+            if (err) return res.status(500).json({ error: err.message });
+            db.query(qSelesai, (err, resSelesai) => {
+                if (err) return res.status(500).json({ error: err.message });
+
+                // Generate Semester Months
+                const months = [];
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth() + 1;
+                const startMonth = currentMonth <= 6 ? 1 : 7;
+                const endMonth = currentMonth <= 6 ? 6 : 12;
+
+                for(let i=startMonth; i<=endMonth; i++) {
+                    const m = currentYear + '-' + String(i).padStart(2, '0');
+                    months.push(m);
+                }
+
+                const finalResults = months.map(m => {
+                    const r = resRencana.find(item => item.periode === m);
+                    const b = resBerjalan.find(item => item.periode === m);
+                    const s = resSelesai.find(item => item.periode === m);
+                    return {
+                        periode: m,
+                        rencana: r ? r.jumlah : 0,
+                        berjalan: b ? b.jumlah : 0,
+                        selesai: s ? s.jumlah : 0
+                    };
+                });
+
+                res.json(finalResults);
+            });
+        });
     });
 });
 
