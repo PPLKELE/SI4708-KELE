@@ -16,10 +16,17 @@ import PengawasDashboard from './pages/pengawas/Dashboard';
 import Logbook from './pages/pengawas/Logbook';
 import DistribusiHasil from './pages/pengawas/DistribusiHasil';
 import EkonomiInsentif from './pages/EkonomiInsentif';
+<<<<<<< HEAD
+import JadwalKerja from './pages/JadwalKerja';
+=======
 import PelaporanMasalah from './pages/PelaporanMasalah';
 import PerencanaanProgram from './pages/admin/PerencanaanProgram';
 import Produktivitas from './pages/admin/Produktivitas';
+<<<<<<< HEAD
+>>>>>>> 3d11035b4cf8fd9373bbc1203221046b213662ba
+=======
 import TrackingReducing from './pages/admin/TrackingReducing';
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
 
 function App() {
   return (
@@ -35,6 +42,9 @@ function App() {
             <Route path="analisis" element={<DashboardAnalisis />} />
             <Route path="pekerja" element={<DataPekerja />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
+<<<<<<< HEAD
+            <Route path="jadwal" element={<JadwalKerja />} />
+=======
             <Route path="edukasi" element={<Edukasi />} />
 
             <Route path="pengawas" element={<PelaporanMasalah />} />
@@ -43,7 +53,11 @@ function App() {
             <Route path="program" element={<ProgramKerja />} />
             <Route path="roles" element={<UserManagement />} />
             <Route path="produktivitas" element={<Produktivitas />} />
+<<<<<<< HEAD
+>>>>>>> 3d11035b4cf8fd9373bbc1203221046b213662ba
+=======
             <Route path="tracking-reducing" element={<TrackingReducing />} />
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
             <Route index element={<Navigate to="/admin/dashboard" replace />} />
           </Route>
 
@@ -53,7 +67,11 @@ function App() {
             <Route path="logbook" element={<Logbook />} />
             <Route path="distribusi" element={<DistribusiHasil />} />
             <Route path="ekonomi" element={<EkonomiInsentif />} />
+<<<<<<< HEAD
+            <Route path="jadwal" element={<JadwalKerja />} />
+=======
             <Route path="pelaporan" element={<PelaporanMasalah />} />
+>>>>>>> 3d11035b4cf8fd9373bbc1203221046b213662ba
             <Route index element={<Navigate to="/pengawas/dashboard" replace />} />
           </Route>
 
