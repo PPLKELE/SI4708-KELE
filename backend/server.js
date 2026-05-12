@@ -438,19 +438,6 @@ app.get('/api/jadwal', (req, res) => {
 });
 
 // --- 10. Dashboard Analisis ---
-<<<<<<< HEAD
-    app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
-        const queryTotalWarga = 'SELECT COUNT(id) as total FROM workers';
-        const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
-        const queryTren = `
-        SELECT DATE_FORMAT(tanggal, '%Y-%m') as bulan, COUNT(DISTINCT worker_id) as partisipasi 
-        FROM insentif 
-        GROUP BY DATE_FORMAT(tanggal, '%Y-%m') 
-        ORDER BY bulan ASC LIMIT 6
-    `;
-        const querySebaran = `
-        SELECT jenis_program as name, COUNT(*) as value 
-=======
 app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
     const period = req.query.period || 'bulanan';
     let groupFormat = '%Y-%m';
@@ -470,7 +457,6 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
     `;
     const querySebaran = `
         SELECT TRIM(jenis_program) as name, COUNT(*) as value 
->>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
         FROM micro_programs 
         GROUP BY TRIM(jenis_program)
     `;
@@ -494,64 +480,48 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
                             db.query(queryDampak, (err, resDampak) => {
                                 if (err) return res.status(500).json({ error: err.message });
 
-<<<<<<< HEAD
                                 const dampakLingkungan = { value: resDampak[0].total, unit: "Kg (Kompos/Sampah)" };
-=======
-                            // Dynamic Gap Filling
-                            const months = [];
-                            const now = new Date();
-                            const currentYear = now.getFullYear();
-
-                            if (period === 'mingguan') {
-                                // Show exactly 7 days of the CURRENT week (Sunday to Saturday)
-                                const day = now.getDay();
-                                const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
-                                
-                                for(let i=0; i<7; i++) {
-                                    const d = new Date(sunday);
-                                    d.setDate(sunday.getDate() + i);
-                                    
-                                    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-                                    const label = `${d.getDate()} ${d.toLocaleString('id-ID', {month:'short'})}`;
-                                    
-                                    months.push({ key, label });
-                                }
-                            } else if (period === 'tahunan') {
-                                // Last 5 years
-                                for(let i=4; i>=0; i--) {
-                                    const y = String(currentYear - i);
-                                    months.push({ key: y, label: y });
-                                }
-                            } else {
-                                // Monthly (Semester)
-                                const currentMonth = now.getMonth() + 1;
-                                const startMonth = currentMonth <= 6 ? 1 : 7;
-                                const endMonth = currentMonth <= 6 ? 6 : 12;
-                                for(let i=startMonth; i<=endMonth; i++) {
-                                    const m = `${currentYear}-${String(i).padStart(2, '0')}`;
-                                    const date = new Date(currentYear, i - 1, 1);
-                                    const label = date.toLocaleString('id-ID', { month: 'short' });
-                                    months.push({ key: m, label: label });
-                                }
-                            }
-
-                            const trenFilled = months.map(m => {
-                                const found = resTren.find(t => t.bulan === m.key);
-                                return { bulan: m.label, partisipasi: found ? found.partisipasi : 0 };
-                            });
->>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
-
-                                // Fill gaps for tren partisipasi for the last 6 months
+                                // Dynamic Gap Filling
                                 const months = [];
-                                for (let i = 5; i >= 0; i--) {
-                                    const d = new Date();
-                                    d.setMonth(d.getMonth() - i);
-                                    const m = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-                                    months.push(m);
+                                const now = new Date();
+                                const currentYear = now.getFullYear();
+
+                                if (period === 'mingguan') {
+                                    // Show exactly 7 days of the CURRENT week (Sunday to Saturday)
+                                    const day = now.getDay();
+                                    const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+                                    
+                                    for(let i=0; i<7; i++) {
+                                        const d = new Date(sunday);
+                                        d.setDate(sunday.getDate() + i);
+                                        
+                                        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                                        const label = `${d.getDate()} ${d.toLocaleString('id-ID', {month:'short'})}`;
+                                        
+                                        months.push({ key, label });
+                                    }
+                                } else if (period === 'tahunan') {
+                                    // Last 5 years
+                                    for(let i=4; i>=0; i--) {
+                                        const y = String(currentYear - i);
+                                        months.push({ key: y, label: y });
+                                    }
+                                } else {
+                                    // Monthly (Semester)
+                                    const currentMonth = now.getMonth() + 1;
+                                    const startMonth = currentMonth <= 6 ? 1 : 7;
+                                    const endMonth = currentMonth <= 6 ? 6 : 12;
+                                    for(let i=startMonth; i<=endMonth; i++) {
+                                        const m = `${currentYear}-${String(i).padStart(2, '0')}`;
+                                        const date = new Date(currentYear, i - 1, 1);
+                                        const label = date.toLocaleString('id-ID', { month: 'short' });
+                                        months.push({ key: m, label: label });
+                                    }
                                 }
+
                                 const trenFilled = months.map(m => {
-                                    const found = resTren.find(t => t.bulan === m);
-                                    return { bulan: m, partisipasi: found ? found.partisipasi : 0 };
+                                    const found = resTren.find(t => t.bulan === m.key);
+                                    return { bulan: m.label, partisipasi: found ? found.partisipasi : 0 };
                                 });
 
                                 res.json({
@@ -622,15 +592,6 @@ app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
             });
     });
 
-<<<<<<< HEAD
-    app.post('/api/inventaris/history', authenticateToken, (req, res) => {
-        const { inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan } = req.body;
-        db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
-            [inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan], function (err, result) {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ id: result.insertId, ...req.body });
-            });
-=======
 app.post('/api/inventaris/:id/adjust', authenticateToken, (req, res) => {
     const inventarisId = req.params.id;
     const { jumlah, tipe, keterangan } = req.body;
@@ -655,10 +616,10 @@ app.post('/api/inventaris/history', authenticateToken, (req, res) => {
         [inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan], function(err, result) {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ id: result.insertId, ...req.body });
->>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
     });
+});
 
-    app.put('/api/users/:id/role', authenticateToken, (req, res) => {
+app.put('/api/users/:id/role', authenticateToken, (req, res) => {
         if (req.user.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
         const { role } = req.body;
         const userId = req.params.id;
@@ -668,22 +629,6 @@ app.post('/api/inventaris/history', authenticateToken, (req, res) => {
         });
     });
 
-<<<<<<< HEAD
-    // --- 13. Produktivitas API ---
-    app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
-        // Menghitung logbook yang mencapai progres 100% sebagai "pekerjaan selesai"
-        const query = `
-        SELECT DATE_FORMAT(created_at, '%Y-%m') as periode, COUNT(id) as jumlah_selesai
-        FROM logbooks
-        WHERE progres_persentase >= 100
-        GROUP BY DATE_FORMAT(created_at, '%Y-%m')
-        ORDER BY periode ASC
-        LIMIT 12
-    `;
-        db.query(query, (err, results) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json(results);
-=======
 // --- 13. Produktivitas API ---
 app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
     const qRencana = `
@@ -741,9 +686,9 @@ app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
 
                 res.json(finalResults);
             });
->>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
         });
     });
+});
 
     // --- 14. Dashboard Admin Main ---
     app.get('/api/dashboard/main', authenticateToken, (req, res) => {
@@ -926,10 +871,6 @@ app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
         });
     });
 
-<<<<<<< HEAD
-    /* Simple Test API */
-    app.get('/ping', (req, res) => res.json({ message: "pong" }));
-=======
 // --- 18. Tracking & Reducing API ---
 app.get('/api/tracking-reducing', authenticateToken, (req, res) => {
     db.query(`SELECT * FROM environmental_tracking ORDER BY tanggal DESC`, (err, rows) => {
@@ -956,7 +897,6 @@ app.delete('/api/tracking-reducing/:id', authenticateToken, (req, res) => {
 
 /* Simple Test API */
 app.get('/ping', (req, res) => res.json({ message: "pong" }));
->>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
 
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {

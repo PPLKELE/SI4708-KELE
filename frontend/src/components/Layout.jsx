@@ -57,14 +57,17 @@ export const Layout = ({ requireRole }) => {
         { icon: BookOpen, label: 'Edukasi', to: '/admin/edukasi' },
         { icon: ShieldCheck, label: 'Pengaturan Akses', to: '/admin/roles' },
         { icon: TrendingUp, label: 'Tren Produktivitas', to: '/admin/produktivitas' },
-        { icon: Leaf, label: 'Tracking & Reducing', to: '/admin/tracking-reducing' }
+        { icon: Leaf, label: 'Tracking & Reducing', to: '/admin/tracking-reducing' },
+        { icon: FileText, label: 'Tugas', to: '/admin/tugas' },
+        { icon: Package, label: 'Inventaris', to: '/admin/inventaris' }
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
         { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' },
         { icon: Send, label: 'Distribusi Hasil', to: '/pengawas/distribusi' },
         { icon: DollarSign, label: 'Insentif & Upah', to: '/pengawas/ekonomi' },
-        { icon: AlertTriangle, label: 'Pelaporan Masalah', to: '/pengawas/pelaporan' }
+        { icon: AlertTriangle, label: 'Pelaporan Masalah', to: '/pengawas/pelaporan' },
+        { icon: Calendar, label: 'Jadwal Kerja', to: '/pengawas/jadwal' }
       ];
 
   useEffect(() => {
@@ -158,30 +161,11 @@ export const Layout = ({ requireRole }) => {
     return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/pengawas/dashboard'} replace />;
   }
 
-<<<<<<< HEAD
   const handleLogout = () => {
     logout();
   };
 
-  const navItems = user.role === 'admin' 
-    ? [
-        { icon: LayoutDashboard, label: 'Dashboard', to: '/admin/dashboard' },
-        { icon: FileText, label: 'Tugas', to: '/admin/tugas' },
-        { icon: PieChart, label: 'Profiling', to: '/admin/profiling' },
-        { icon: DollarSign, label: 'Keuangan', to: '/admin/ekonomi' },
-        { icon: Users, label: 'Pengawas', to: '/admin/pengawas' },
-        { icon: BookOpen, label: 'Edukasi', to: '/admin/edukasi' },
-        { icon: Package, label: 'Inventaris', to: '/admin/inventaris' }
-      ]
-    : [
-        { icon: LayoutDashboard, label: 'Dashboard Pengawas', to: '/pengawas/dashboard' },
-        { icon: Calendar, label: 'Logbook Validasi', to: '/pengawas/logbook' },
-        { icon: DollarSign, label: 'Insentif & Upah', to: '/pengawas/ekonomi' },
-        { icon: Calendar, label: 'Jadwal Kerja', to: '/pengawas/jadwal' }
-      ];
-=======
   const unreadNotifs = notifications.filter(n => !n.is_read).length;
->>>>>>> 3d11035b4cf8fd9373bbc1203221046b213662ba
 
   return (
     <div className="app-container">
