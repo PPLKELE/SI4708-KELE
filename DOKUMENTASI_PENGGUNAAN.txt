@@ -1,0 +1,63 @@
+======================================================
+DOKUMENTASI PENGGUNAAN APLIKASI WEB WORK4VILLAGE
+======================================================
+
+1. INFORMASI AKUN (CREDENTIALS) LOG IN PENGGUNA
+------------------------------------------------------
+Aplikasi ini memiliki 2 tipe pengguna sesuai dengan rancangan dokumen. Gunakan akun berikut untuk masuk ke dalam sistem:
+
+[Role 1: ADMIN DESA]
+Keterangan : Memiliki akses penuh terhadap Dasbor (Statistik), Manajemen Data Pekerja, serta Data Keluarga Miskin.
+Email      : admin@village.com
+Password   : admin123
+
+[Role 2: PENGAWAS / SURVEYOR]
+Keterangan : Memiliki akses lapangan memantau jadwal penugasan kegiatan, serta formulir untuk Logbook validasi absensi & pengunggahan bukti fisik pekerjaan.
+Email      : pengawas@village.com
+Password   : pengawas123
+
+
+2. STRUKTUR PROYEK
+------------------------------------------------------
+Aplikasi dibangun menggunakan Arsitektur Fullstack:
+- Folder "frontend/" : Berisi kode antarmuka / UI berbasis React.js (Vite).
+- Folder "backend/"  : Berisi server Node.js dan Express API.
+- Database MySQL : Aplikasi menggunakan MySQL server (perlu XAMPP/MySQL yg menyala). Database "work4village_db" dan isinya akan dibuat secara otomatis.
+
+
+3. CARA MENJALANKAN (RUNNING) APLIKASI DI KOMPUTER LAIN
+------------------------------------------------------
+Pastikan Anda sudah menginstal "Node.js" dari situs resminya (nodejs.org) sebelum menjalankan aplikasi.
+Pastikan juga service MySQL (misal melalui aplikasi XAMPP) sudah di-Start dan berjalan.
+
+Langkah A: Menjalankan Backend (Server API)
+1. Buka Terminal / CMD / PowerShell.
+2. Masuk ke direktori backend:
+   cd "backend"
+3. (Opsional bila belum pernah instal dependency) Jalankan:
+   npm install
+4. Jalankan server backend:
+   node server.js
+5. Pastikan muncul pesan: 
+   "Database work4village_db checked/created." dan "Connected to MySQL work4village_db."
+   serta "Work4Village Server is running on port ... "
+
+Langkah B: Menjalankan Frontend (Tampilan Web UI)
+1. Buka jendela Terminal / CMD baru (biarkan terminal Backend tetap berjalan).
+2. Masuk ke direktori frontend:
+   cd "frontend"
+3. (Opsional bila belum pernah instal dependency) Jalankan:
+   npm install
+4. Jalankan development server frontend:
+   npm run dev
+5. Terminal akan menampilkan URL: http://localhost:5173
+6. Buka Google Chrome atau browser lain lalu kunjungi URL tersebut.
+
+
+4. CATATAN PENGEMBANGAN TERKINI
+------------------------------------------------------
+- Fitur Autentikasi (Log In JWT Validation) berfungsi lengkap.
+- Fitur Dashboards untuk Admin & Pengawas.
+- Fitur Manajemen Registrasi Data Pekerja & Integrasi API.
+- Fitur Antarmuka Pengunggahan Foto / Persentase (Logbook).
+======================================================
