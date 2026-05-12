@@ -242,12 +242,13 @@ a:hover {
 
 /* Sidebar */
 .sidebar {
-  width: 280px;
   background: var(--surface);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .sidebar-logo {

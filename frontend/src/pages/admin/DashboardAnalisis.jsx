@@ -21,7 +21,7 @@ export default function DashboardAnalisis() {
     try {
       const token = localStorage.getItem('token');
       // In a real app we might pass period to the API, but for MVP we use the same endpoint
-      const response = await fetch('http://localhost:4000/api/dashboard/analisis', {
+      const response = await fetch(`http://localhost:4000/api/dashboard/analisis?period=${period}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const result = await response.json();
@@ -116,13 +116,15 @@ export default function DashboardAnalisis() {
       {/* Visual Dashboard */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         <div className="chart-container" style={{ background: 'white', padding: '1.5rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-main)' }}>Tren Partisipasi Warga (Per Bulan)</h3>
+          <h3 style={{ margin: '0 0 1.5rem 0', color: 'var(--text-main)' }}>
+            Tren Partisipasi Warga ({period === 'mingguan' ? 'Per Minggu' : period === 'tahunan' ? 'Per Tahun' : 'Per Bulan'})
+          </h3>
           <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
               <BarChart data={data.tren_partisipasi} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="bulan" />
-                <YAxis />
+                <YAxis domain={[0, dataMax => (dataMax < 5 ? 5 : Math.ceil(dataMax * 1.2))]} />
                 <RechartsTooltip />
                 <Bar dataKey="partisipasi" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Jumlah Pekerja" />
               </BarChart>

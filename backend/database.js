@@ -3,9 +3,10 @@ const bcrypt = require('bcryptjs');
 
 // Create DB connection
 const db = mysql.createConnection({
-    host: 'localhost',
+    host: '194.233.69.244',
+    port: 3307,
     user: 'root',
-    password: 'Silvy.CK4' // Adjust if you have a password
+    password: 'password-root-for-telkom'
 });
 
 // Connect, create DB, and switch to it
@@ -197,6 +198,15 @@ function initDb() {
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS environmental_tracking (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tanggal DATE NOT NULL,
+            jenis_limbah VARCHAR(255) NOT NULL,
+            volume_kg DECIMAL(10,2) NOT NULL,
+            estimasi_emisi_berkurang_kg DECIMAL(10,2) NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )`
     ];
 

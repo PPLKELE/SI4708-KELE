@@ -438,6 +438,7 @@ app.get('/api/jadwal', (req, res) => {
 });
 
 // --- 10. Dashboard Analisis ---
+<<<<<<< HEAD
     app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
         const queryTotalWarga = 'SELECT COUNT(id) as total FROM workers';
         const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
@@ -449,8 +450,29 @@ app.get('/api/jadwal', (req, res) => {
     `;
         const querySebaran = `
         SELECT jenis_program as name, COUNT(*) as value 
+=======
+app.get('/api/dashboard/analisis', authenticateToken, (req, res) => {
+    const period = req.query.period || 'bulanan';
+    let groupFormat = '%Y-%m';
+    if (period === 'mingguan') groupFormat = '%Y-%m-%d';
+    else if (period === 'tahunan') groupFormat = '%Y';
+
+    const queryTotalWarga = 'SELECT COUNT(id) as total FROM workers';
+    const queryTotalInsentif = 'SELECT COALESCE(SUM(jumlah_upah), 0) as total FROM insentif';
+    const queryTren = `
+        SELECT bulan, COUNT(DISTINCT worker_id) as partisipasi FROM (
+            SELECT DATE_FORMAT(created_at, '${groupFormat}') as bulan, id as worker_id FROM workers
+            UNION
+            SELECT DATE_FORMAT(tanggal, '${groupFormat}') as bulan, worker_id FROM insentif
+        ) as combined
+        GROUP BY bulan
+        ORDER BY bulan ASC
+    `;
+    const querySebaran = `
+        SELECT TRIM(jenis_program) as name, COUNT(*) as value 
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
         FROM micro_programs 
-        GROUP BY jenis_program
+        GROUP BY TRIM(jenis_program)
     `;
         const queryCapaian = `
         SELECT id, nama_program, jenis_program, status, tanggal_mulai, tanggal_selesai 
@@ -472,7 +494,52 @@ app.get('/api/jadwal', (req, res) => {
                             db.query(queryDampak, (err, resDampak) => {
                                 if (err) return res.status(500).json({ error: err.message });
 
+<<<<<<< HEAD
                                 const dampakLingkungan = { value: resDampak[0].total, unit: "Kg (Kompos/Sampah)" };
+=======
+                            // Dynamic Gap Filling
+                            const months = [];
+                            const now = new Date();
+                            const currentYear = now.getFullYear();
+
+                            if (period === 'mingguan') {
+                                // Show exactly 7 days of the CURRENT week (Sunday to Saturday)
+                                const day = now.getDay();
+                                const sunday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+                                
+                                for(let i=0; i<7; i++) {
+                                    const d = new Date(sunday);
+                                    d.setDate(sunday.getDate() + i);
+                                    
+                                    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                                    const label = `${d.getDate()} ${d.toLocaleString('id-ID', {month:'short'})}`;
+                                    
+                                    months.push({ key, label });
+                                }
+                            } else if (period === 'tahunan') {
+                                // Last 5 years
+                                for(let i=4; i>=0; i--) {
+                                    const y = String(currentYear - i);
+                                    months.push({ key: y, label: y });
+                                }
+                            } else {
+                                // Monthly (Semester)
+                                const currentMonth = now.getMonth() + 1;
+                                const startMonth = currentMonth <= 6 ? 1 : 7;
+                                const endMonth = currentMonth <= 6 ? 6 : 12;
+                                for(let i=startMonth; i<=endMonth; i++) {
+                                    const m = `${currentYear}-${String(i).padStart(2, '0')}`;
+                                    const date = new Date(currentYear, i - 1, 1);
+                                    const label = date.toLocaleString('id-ID', { month: 'short' });
+                                    months.push({ key: m, label: label });
+                                }
+                            }
+
+                            const trenFilled = months.map(m => {
+                                const found = resTren.find(t => t.bulan === m.key);
+                                return { bulan: m.label, partisipasi: found ? found.partisipasi : 0 };
+                            });
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
 
                                 // Fill gaps for tren partisipasi for the last 6 months
                                 const months = [];
@@ -555,6 +622,7 @@ app.get('/api/jadwal', (req, res) => {
             });
     });
 
+<<<<<<< HEAD
     app.post('/api/inventaris/history', authenticateToken, (req, res) => {
         const { inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan } = req.body;
         db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
@@ -562,6 +630,32 @@ app.get('/api/jadwal', (req, res) => {
                 if (err) return res.status(500).json({ error: err.message });
                 res.json({ id: result.insertId, ...req.body });
             });
+=======
+app.post('/api/inventaris/:id/adjust', authenticateToken, (req, res) => {
+    const inventarisId = req.params.id;
+    const { jumlah, tipe, keterangan } = req.body;
+    
+    // First, update the quantity in inventaris table
+    const sign = tipe === 'tambah' ? '+' : '-';
+    db.query(`UPDATE inventaris SET kuantitas = kuantitas ${sign} ? WHERE id = ?`, [parseFloat(jumlah), inventarisId], function(err, updateResult) {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        // Then log the transaction history
+        db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
+            [inventarisId, parseFloat(jumlah), tipe, keterangan], function(err, historyResult) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Stock adjusted successfully' });
+        });
+    });
+});
+
+app.post('/api/inventaris/history', authenticateToken, (req, res) => {
+    const { inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan } = req.body;
+    db.query(`INSERT INTO inventaris_history (inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan) VALUES (?,?,?,?)`,
+        [inventaris_id, jumlah_perubahan, tipe_perubahan, keterangan], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
     });
 
     app.put('/api/users/:id/role', authenticateToken, (req, res) => {
@@ -574,6 +668,7 @@ app.get('/api/jadwal', (req, res) => {
         });
     });
 
+<<<<<<< HEAD
     // --- 13. Produktivitas API ---
     app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
         // Menghitung logbook yang mencapai progres 100% sebagai "pekerjaan selesai"
@@ -588,6 +683,65 @@ app.get('/api/jadwal', (req, res) => {
         db.query(query, (err, results) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json(results);
+=======
+// --- 13. Produktivitas API ---
+app.get('/api/produktivitas/tren', authenticateToken, (req, res) => {
+    const qRencana = `
+        SELECT DATE_FORMAT(tanggal_mulai, '%Y-%m') as periode, COUNT(*) as jumlah 
+        FROM micro_programs 
+        WHERE status = 'planned'
+        GROUP BY periode
+    `;
+    const qBerjalan = `
+        SELECT DATE_FORMAT(tanggal_mulai, '%Y-%m') as periode, COUNT(*) as jumlah 
+        FROM micro_programs 
+        WHERE status IN ('scheduled', 'in_progress', 'active')
+        GROUP BY periode
+    `;
+    const qSelesai = `
+        SELECT periode, COUNT(*) as jumlah FROM (
+            SELECT DATE_FORMAT(tanggal_selesai, '%Y-%m') as periode FROM micro_programs WHERE status IN ('selesai', 'completed')
+            UNION ALL
+            SELECT DATE_FORMAT(created_at, '%Y-%m') as periode FROM logbooks WHERE progres_persentase >= 100
+        ) as combined
+        GROUP BY periode
+    `;
+
+    db.query(qRencana, (err, resRencana) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.query(qBerjalan, (err, resBerjalan) => {
+            if (err) return res.status(500).json({ error: err.message });
+            db.query(qSelesai, (err, resSelesai) => {
+                if (err) return res.status(500).json({ error: err.message });
+
+                // Generate Semester Months
+                const months = [];
+                const now = new Date();
+                const currentYear = now.getFullYear();
+                const currentMonth = now.getMonth() + 1;
+                const startMonth = currentMonth <= 6 ? 1 : 7;
+                const endMonth = currentMonth <= 6 ? 6 : 12;
+
+                for(let i=startMonth; i<=endMonth; i++) {
+                    const m = currentYear + '-' + String(i).padStart(2, '0');
+                    months.push(m);
+                }
+
+                const finalResults = months.map(m => {
+                    const r = resRencana.find(item => item.periode === m);
+                    const b = resBerjalan.find(item => item.periode === m);
+                    const s = resSelesai.find(item => item.periode === m);
+                    return {
+                        periode: m,
+                        rencana: r ? r.jumlah : 0,
+                        berjalan: b ? b.jumlah : 0,
+                        selesai: s ? s.jumlah : 0
+                    };
+                });
+
+                res.json(finalResults);
+            });
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
         });
     });
 
@@ -772,8 +926,37 @@ app.get('/api/jadwal', (req, res) => {
         });
     });
 
+<<<<<<< HEAD
     /* Simple Test API */
     app.get('/ping', (req, res) => res.json({ message: "pong" }));
+=======
+// --- 18. Tracking & Reducing API ---
+app.get('/api/tracking-reducing', authenticateToken, (req, res) => {
+    db.query(`SELECT * FROM environmental_tracking ORDER BY tanggal DESC`, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/tracking-reducing', authenticateToken, (req, res) => {
+    const { tanggal, jenis_limbah, volume_kg, estimasi_emisi_berkurang_kg } = req.body;
+    db.query(`INSERT INTO environmental_tracking (tanggal, jenis_limbah, volume_kg, estimasi_emisi_berkurang_kg) VALUES (?,?,?,?)`,
+        [tanggal, jenis_limbah, volume_kg, estimasi_emisi_berkurang_kg], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, ...req.body });
+    });
+});
+
+app.delete('/api/tracking-reducing/:id', authenticateToken, (req, res) => {
+    db.query(`DELETE FROM environmental_tracking WHERE id=?`, [req.params.id], function(err, result) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Record deleted successfully' });
+    });
+});
+
+/* Simple Test API */
+app.get('/ping', (req, res) => res.json({ message: "pong" }));
+>>>>>>> 89e1b6d111e5e41cc027f670300ae3ca625053d9
 
     const PORT = process.env.PORT || 4000;
     app.listen(PORT, () => {
